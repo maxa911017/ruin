@@ -20,25 +20,27 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* 電影膠卷雜訊 */
         .grain {
             position: fixed; inset: 0;
             background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtP38+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJklEQVQ4y2NgGAWjYBSMglEwCkbBKBgFo2AUjIJRMApGwSgYBaNgFAwAAwB7AQABK5Sj1AAAAABJRU5ErkJggg==');
-            opacity: 0.08; pointer-events: none; z-index: 999;
+            opacity: 0.12; pointer-events: none; z-index: 999;
             animation: grainShift 0.4s steps(2) infinite;
         }
         @keyframes grainShift { 0% { background-position: 0 0; } 100% { background-position: 10px 10px; } }
 
+        /* 起始畫面毛玻璃 */
         #init-screen {
             position: fixed; inset: 0; z-index: 1000; 
-            background: rgba(0, 0, 0, 0.65); 
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 2s ease-in-out; cursor: pointer;
         }
         .init-text {
             color: rgba(255, 255, 255, 0.9); font-size: clamp(1.2rem, 5vw, 1.5rem);
             letter-spacing: 0.5em; font-weight: 300; margin-left: 0.5em;
-            animation: pulse-slow 4s infinite; text-shadow: 0 0 15px rgba(255,255,255,0.4);
+            animation: pulse-slow 4s infinite; text-shadow: 0 0 20px rgba(255,255,255,0.6);
             text-align: center; white-space: nowrap;
         }
         .init-subtext {
@@ -48,96 +50,98 @@
 
         #webgl-container { position: absolute; inset: 0; z-index: 1; }
 
+        /* 極致壓迫的黑暗邊緣 (Vignette) */
         #darkness-overlay {
             position: absolute; inset: 0; pointer-events: none; z-index: 2;
-            background: rgba(0, 0, 0, 0.35); 
-            transition: opacity 3s ease-in-out;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%);
+            transition: opacity 4s ease-in-out;
         }
 
         #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 
         .instruction {
-            position: absolute; bottom: 10%; color: rgba(255, 255, 255, 0.7);
-            font-size: clamp(0.8rem, 3vw, 0.95rem); letter-spacing: 0.4em;
+            position: absolute; bottom: 8%; color: rgba(255, 255, 255, 0.8);
+            font-size: clamp(0.85rem, 3.5vw, 1rem); letter-spacing: 0.4em;
             animation: pulse-slow 4s infinite; text-align: center;
-            transition: opacity 2s ease; text-shadow: 0 0 10px rgba(0,0,0,0.8);
-            width: 90vw; overflow-wrap: break-word; white-space: normal;
+            transition: opacity 2s ease; text-shadow: 0 0 15px rgba(0,0,0,1);
+            width: 85vw; overflow-wrap: break-word; white-space: normal;
         }
         .hidden-hint { opacity: 0; pointer-events: none; }
-        @keyframes pulse-slow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes pulse-slow { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
+        /* 故事覆蓋層 */
         #story-overlay {
             position: fixed; inset: 0; z-index: 100;
-            background-color: rgba(0, 0, 0, 0.82); 
+            background-color: rgba(0, 0, 0, 0.88); 
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         }
         #story-overlay.active { opacity: 1; pointer-events: auto; }
         
-        /* 徹底解決手機跑版的核心 CSS (使用寬度限制、區塊顯示與強制換行) */
+        /* ---------------------------------------------------- */
+        /* 絕對防跑版的電影字幕排版 */
+        /* ---------------------------------------------------- */
         .story-text-container { 
-            width: 90vw; /* 嚴格限制在畫面寬度的 90% */
-            max-width: 650px; 
-            padding: 0 4vw; /* 內部安全留白 */
-            box-sizing: border-box; 
-            display: flex; flex-direction: column; justify-content: center;
+            width: 85vw; /* 安全寬度 */
+            max-width: 600px; 
+            margin: 0 auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         
         #action-text {
-            color: #8a8a8a; font-size: clamp(0.9rem, 4vw, 1.15rem); letter-spacing: 0.15em; line-height: 1.8;
-            margin-bottom: 4vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
-            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 2.5vh;
+            color: #999; font-size: clamp(0.9rem, 4vw, 1.1rem); letter-spacing: 0.2em; line-height: 2;
+            margin-bottom: 5vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3vh;
             font-weight: 300; filter: blur(5px);
             
-            /* 防跑版聖旨 */
-            display: block; width: 100%; text-align: left;
-            overflow-wrap: break-word; word-wrap: break-word; white-space: normal;
+            display: block; width: 100%; text-align: center;
+            word-break: normal; overflow-wrap: break-word; white-space: normal;
         }
         #action-text.show { opacity: 1; filter: blur(0px); }
         
         #quote-text {
-            color: #ffcc66; font-size: clamp(1.15rem, 5vw, 1.5rem); letter-spacing: 0.1em; line-height: 2;
-            text-shadow: 0 0 20px rgba(255, 204, 102, 0.3); min-height: 20vh;
-            font-weight: 300;
+            color: #ffcc66; font-size: clamp(1.1rem, 5.5vw, 1.6rem); letter-spacing: 0.15em; line-height: 2.2;
+            text-shadow: 0 0 25px rgba(255, 204, 102, 0.4); min-height: 25vh; font-weight: 300;
             
-            /* 防跑版聖旨 */
-            display: block; width: 100%; text-align: left;
-            overflow-wrap: break-word; word-wrap: break-word; white-space: normal;
+            display: block; width: 100%; text-align: center;
+            word-break: normal; overflow-wrap: break-word; white-space: normal;
         }
+        
         .typewriter-cursor::after {
             content: '|'; color: #ffcc66; animation: blink 1s step-end infinite; margin-left: 2px; opacity: 0.8;
         }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* 最終希望文字 - 防跑版 */
+        /* 最終希望文字 */
         #final-container {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             text-align: center; opacity: 0; transition: opacity 6s ease-in; z-index: 15; pointer-events: none; 
             width: 90vw; max-width: 800px; padding: 0 2vw; box-sizing: border-box;
         }
         #final-text {
-            font-size: clamp(1.5rem, 7vw, 3.5rem); font-weight: 300; letter-spacing: 0.25em;
-            color: #fff; text-shadow: 0 0 40px rgba(255, 200, 100, 0.9), 0 0 80px rgba(255, 100, 50, 0.5);
-            margin-bottom: 3vh; margin-left: 0.1em;
+            font-size: clamp(1.8rem, 8vw, 4rem); font-weight: 300; letter-spacing: 0.3em;
+            color: #fff; text-shadow: 0 0 50px rgba(255, 200, 100, 1), 0 0 100px rgba(255, 100, 50, 0.6);
+            margin-bottom: 4vh; margin-left: 0.15em;
             display: block; overflow-wrap: break-word; white-space: normal; line-height: 1.5;
         }
         #final-subtext {
-            font-size: clamp(0.9rem, 3.5vw, 1.3rem); color: rgba(255, 220, 150, 0.9);
-            letter-spacing: 0.25em; font-weight: 200; margin-left: 0.1em; text-shadow: 0 0 10px #000;
-            display: block; overflow-wrap: break-word; white-space: normal; line-height: 1.8;
+            font-size: clamp(0.9rem, 4vw, 1.4rem); color: rgba(255, 220, 150, 0.95);
+            letter-spacing: 0.3em; font-weight: 200; margin-left: 0.15em; text-shadow: 0 0 15px #000;
+            display: block; overflow-wrap: break-word; white-space: normal; line-height: 2;
         }
 
+        /* 巨大震波漣漪 */
         .ripple {
-            position: absolute; border: 1px solid rgba(255, 220, 100, 0.9);
+            position: absolute; border: 2px solid rgba(255, 220, 100, 0.9);
             border-radius: 50%; transform: translate(-50%, -50%) scale(0);
             pointer-events: none; z-index: 5;
             animation: ripple-anim 2.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
         }
         @keyframes ripple-anim {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 50px rgba(255, 180, 50, 0.9) inset; border-width: 3px; }
-            50% { opacity: 0.5; border-width: 1px; }
-            100% { transform: translate(-50%, -50%) scale(8); opacity: 0; box-shadow: 0 0 0px rgba(255, 150, 50, 0) inset; border-width: 0px; }
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 80px rgba(255, 180, 50, 1) inset; border-width: 6px; }
+            50% { opacity: 0.6; border-width: 2px; }
+            100% { transform: translate(-50%, -50%) scale(15); opacity: 0; box-shadow: 0 0 0px rgba(255, 150, 50, 0) inset; border-width: 0px; }
         }
     </style>
 </head>
@@ -147,18 +151,18 @@
 
     <div id="init-screen">
         <div class="init-text">輕觸畫面，進入廢墟</div>
-        <div class="init-subtext">為獲得最佳體驗，請佩戴耳機並開啟聲音</div>
+        <div class="init-subtext">強烈建議佩戴耳機，感受極致沈浸</div>
     </div>
 
     <div id="darkness-overlay"></div>
     <div id="webgl-container"></div>
     
     <div id="ui-layer">
-        <div id="hint-text" class="instruction hidden-hint">滑動環視四周，觸碰飛灰傾聽思念</div>
+        <div id="hint-text" class="instruction hidden-hint">滑動環視四周，點擊飛灰釋放思念</div>
         
         <div id="final-container">
             <div id="final-text">一切都會變得更好</div>
-            <div id="final-subtext">那些未曾送達的愛，終將化作漫天星火照亮黑夜</div>
+            <div id="final-subtext">那些未曾送達的愛，<br>終將化作漫天星火照亮黑夜</div>
         </div>
     </div>
 
@@ -177,13 +181,13 @@
         
         // --- 音效引擎 (Tone.js) ---
         let isAudioReady = false;
-        let droneSynth, hopePad, chimeSynth, typeNoise, bgNoise, bgFilter;
+        let droneSynth, hopePad, chimeSynth, typeNoise, bgNoise, bgFilter, boomSynth;
 
         async function initAudio() {
             if (isAudioReady) return;
             try {
                 await Tone.start();
-                bgFilter = new Tone.Filter(200, "lowpass").toDestination();
+                bgFilter = new Tone.Filter(300, "lowpass").toDestination();
                 bgNoise = new Tone.Noise("pink").connect(bgFilter);
                 bgNoise.volume.value = -12;
 
@@ -194,22 +198,30 @@
                 }).toDestination();
                 droneSynth.volume.value = -15;
 
-                const reverb = new Tone.Reverb({ decay: 8, wet: 0.6 }).toDestination();
+                const reverb = new Tone.Reverb({ decay: 10, wet: 0.7 }).toDestination();
+                
                 hopePad = new Tone.PolySynth(Tone.Synth, {
                     oscillator: { type: "sine" }, envelope: { attack: 3, decay: 2, sustain: 0.8, release: 5 }
                 }).connect(reverb);
                 hopePad.volume.value = -Infinity;
 
                 chimeSynth = new Tone.PolySynth(Tone.MetalSynth, {
-                    frequency: 250, envelope: { attack: 0.01, decay: 1.5, release: 1 },
-                    harmonicity: 4, modulationIndex: 20, resonance: 4000, octaves: 1.5
+                    frequency: 250, envelope: { attack: 0.01, decay: 2, release: 2 },
+                    harmonicity: 4.5, modulationIndex: 20, resonance: 4000, octaves: 1.5
                 }).connect(reverb);
-                chimeSynth.volume.value = -15;
+                chimeSynth.volume.value = -12;
+
+                // 新增：核彈級低頻重擊音效 (Shockwave Boom)
+                boomSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.08, octaves: 6, oscillator: { type: "sine" },
+                    envelope: { attack: 0.001, decay: 2.5, sustain: 0, release: 2 }
+                }).connect(reverb);
+                boomSynth.volume.value = -5;
 
                 typeNoise = new Tone.NoiseSynth({
                     noise: { type: 'brown' }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.05 }
                 }).toDestination();
-                typeNoise.volume.value = -25;
+                typeNoise.volume.value = -22;
 
                 isAudioReady = true;
                 bgNoise.start();
@@ -222,19 +234,23 @@
         let isEnding = false;
         let currentStoryIndex = 0;
 
-        // 文字裡面的換行都會因為白名單機制在顯示時被轉換為 <br>
+        // 完美換行的文字
         const warMessages = [
-            { action: "你撥開瓦礫，觸碰了一面碎裂的螢幕。\n微弱的亮光，宛如它不甘的脈搏。", quote: "「電量剩 2%。如果我沒能出去，請幫我照顧好媽媽。」" },
-            { action: "灰燼掩埋著一個失去溫度的鐵盒，\n裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。小寶，爸爸永遠愛你，你要勇敢。」" },
-            { action: "你拾起一張被戰火燒毀一半的紙條，\n上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，但我不敢出去。好冷。」" },
-            { action: "在沒有訊號的荒原裡，\n一個紅色驚嘆號將最後的愛意，永遠困在了發件匣。", quote: "「他們說救援不會來了。我們把最後的水留給了孩子。」" },
-            { action: "在最深最深的黑夜中，\n一卷底片記錄下了他們對黎明最後的渴望。", quote: "「天亮了。這可能是我最後一次看到日出...」" }
+            { action: "你撥開瓦礫，觸碰了一面碎裂的螢幕。\n微弱的亮光，宛如它不甘的脈搏。", quote: "「電量剩 2%。\n如果我沒能出去，請幫我照顧好媽媽。」" },
+            { action: "灰燼掩埋著一個失去溫度的鐵盒，\n裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。\n小寶，爸爸永遠愛你，你要勇敢。」" },
+            { action: "你拾起一張被戰火燒毀一半的紙條，\n上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，但我不敢出去。\n好冷。」" },
+            { action: "在沒有訊號的荒原裡，\n一個紅色驚嘆號將最後的愛意，永遠困在了發件匣。", quote: "「他們說救援不會來了。\n我們把最後的水留給了孩子。」" },
+            { action: "在最深最深的黑夜中，\n一卷底片記錄下了他們對黎明最後的渴望。", quote: "「天亮了。\n這可能是我最後一次看到日出...」" }
         ];
 
         // --- Three.js 系統與 360 環景 ---
         const container3D = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1500);
+        
+        // 攝影機預設 FOV 70，爆炸時會動態改變
+        let currentFov = 70;
+        let targetFov = 70;
+        const camera = new THREE.PerspectiveCamera(currentFov, window.innerWidth / window.innerHeight, 0.1, 1500);
         
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -247,15 +263,15 @@
         
         const panoramaMaterial = new THREE.MeshBasicMaterial({
             map: textureLoader.load(PANORAMA_IMAGE_URL),
-            color: 0x666666 
+            color: 0x444444 // 極深的廢墟背景
         });
         const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMaterial);
         scene.add(panoramaMesh);
 
         // ==========================================
-        // 極致數量！25,000 顆粒子的螢火蟲之墓氛圍
+        // 終極突破！50,000 顆粒子的爆量螢火蟲之墓氛圍
         // ==========================================
-        const particleCount = 25000; 
+        const particleCount = 50000; 
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
@@ -268,28 +284,28 @@
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
             grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            grad.addColorStop(0.1, 'rgba(255, 220, 150, 0.9)');
-            grad.addColorStop(0.4, 'rgba(255, 150, 50, 0.4)');
+            grad.addColorStop(0.1, 'rgba(255, 230, 150, 1)');
+            grad.addColorStop(0.4, 'rgba(255, 120, 30, 0.5)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(canvas);
         }
 
-        const fireflyColors = [0xffb84d, 0xffcc66, 0xff9933, 0xccff66]; 
+        const fireflyColors = [0xffcc44, 0xffee88, 0xff9922, 0xffffaa]; 
 
         for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 800;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 800; 
+            positions[i * 3] = (Math.random() - 0.5) * 1200;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 1200;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 1200; 
 
-            // 設定 20% (高達 5000顆) 的粒子一開始就在滿天飛舞
-            let isPreLit = Math.random() < 0.2;
+            // 設定 40% (高達 20,000顆) 的粒子一開始就在滿天飛舞
+            let isPreLit = Math.random() < 0.4;
             
             if (isPreLit) {
                 let randomColor = fireflyColors[Math.floor(Math.random() * fireflyColors.length)];
                 let c = new THREE.Color(randomColor);
                 colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-                sizes[i] = Math.random() * 8 + 3; // 發光粒子較大
+                sizes[i] = Math.random() * 8 + 4; // 發光粒子更大更明顯
             } else {
                 colors[i * 3] = 0.15 + Math.random() * 0.05;
                 colors[i * 3 + 1] = 0.15 + Math.random() * 0.05;
@@ -299,12 +315,12 @@
 
             particleData.push({
                 velocity: isPreLit 
-                    ? new THREE.Vector3((Math.random()-0.5)*0.5, Math.random()*0.6 + 0.2, (Math.random()-0.5)*0.5) 
-                    : new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.4 - 0.1, (Math.random()-0.5)*0.1),
+                    ? new THREE.Vector3((Math.random()-0.5)*0.5, Math.random()*0.8 + 0.2, (Math.random()-0.5)*0.5) 
+                    : new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.5 - 0.1, (Math.random()-0.5)*0.1),
                 isAwake: isPreLit,
                 targetColor: new THREE.Color(isPreLit ? fireflyColors[Math.floor(Math.random() * fireflyColors.length)] : 0x000000),
                 currentColor: new THREE.Color(colors[i*3], colors[i*3+1], colors[i*3+2]),
-                baseSize: isPreLit ? sizes[i] : (sizes[i] * 4), 
+                baseSize: isPreLit ? sizes[i] : (sizes[i] * 5), 
                 phase: Math.random() * Math.PI * 2 
             });
         }
@@ -314,8 +330,8 @@
         geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
         const material = new THREE.PointsMaterial({
-            size: 2.5, map: createGlowTexture(), vertexColors: true,
-            transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false
+            size: 3.5, map: createGlowTexture(), vertexColors: true,
+            transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false
         });
 
         const particles = new THREE.Points(geometry, material);
@@ -363,9 +379,9 @@
             }, 2000);
         });
 
-        // 點擊觸發邏輯：引爆 1500~3000 顆！
+        // 點擊觸發邏輯：核彈級引爆 2000~5000 顆！並伴隨鏡頭震波
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Points.threshold = 100; 
+        raycaster.params.Points.threshold = 150; 
         let typeWriterTimer;
 
         function handleTapInteraction(clientX, clientY) {
@@ -383,20 +399,24 @@
                 hitPoint.copy(intersects[0].point);
             } else {
                 camera.getWorldDirection(hitPoint);
-                hitPoint.multiplyScalar(250 + Math.random()*100).add(camera.position);
+                hitPoint.multiplyScalar(400 + Math.random()*200).add(camera.position);
             }
 
-            // 引爆螢火蟲群！數量翻倍
+            // 鏡頭震波特效 (Camera Shockwave)
+            currentFov = 95; // 瞬間拉廣角
+            targetFov = 70;  // 然後慢慢彈回
+
+            // 引爆螢火蟲群！數量核彈級爆發
             let awakenCount = 0;
-            let burstAmount = 1500 + Math.random() * 2000; 
+            let burstAmount = 3000 + Math.random() * 3000; 
             
             for(let i=0; i<particleCount; i++) {
                 if(!particleData[i].isAwake) {
                     let px = positions[i*3], py = positions[i*3+1], pz = positions[i*3+2];
                     let distSq = (px-hitPoint.x)**2 + (py-hitPoint.y)**2 + (pz-hitPoint.z)**2;
                     
-                    // 爆炸半徑擴大
-                    if(distSq < 250000 || awakenCount < 100) { 
+                    // 無視距離的強制連鎖反應
+                    if(distSq < 400000 || awakenCount < 500) { 
                         awakenParticle(i);
                         awakenCount++;
                         if(awakenCount >= burstAmount) break;
@@ -406,11 +426,14 @@
 
             createRipple(clientX, clientY);
 
-            if (isAudioReady && chimeSynth) {
-                let note = chimeNotes[currentStoryIndex % chimeNotes.length];
-                chimeSynth.triggerAttackRelease(note, "2n"); 
+            // 頂級聽覺反饋：敲擊星星聲 + 爆炸低鳴
+            if (isAudioReady) {
+                if(chimeSynth) chimeSynth.triggerAttackRelease(chimeNotes[currentStoryIndex % chimeNotes.length], "1n"); 
+                if(boomSynth) boomSynth.triggerAttackRelease("C1", "1n"); // 深沉的轟鳴
             }
-            if(navigator.vibrate) navigator.vibrate([80, 50, 100, 30, 50]); 
+            
+            // 強烈多段震動
+            if(navigator.vibrate) navigator.vibrate([100, 30, 100, 30, 150]); 
 
             if (currentStoryIndex < warMessages.length) {
                 openStory(warMessages[currentStoryIndex]);
@@ -433,13 +456,13 @@
             const p = particleData[idx];
             p.isAwake = true;
             p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]); 
-            sizes[idx] = p.baseSize * (Math.random() * 2.5 + 1); 
+            sizes[idx] = p.baseSize * (Math.random() * 3.5 + 1.5); 
             
-            // 更強的爆發動能
+            // 更瘋狂的爆發動能
             p.velocity.set(
-                (Math.random()-0.5) * 5, 
-                Math.random() * 4 + 1.5, 
-                (Math.random()-0.5) * 5
+                (Math.random()-0.5) * 10, 
+                Math.random() * 8 + 2, 
+                (Math.random()-0.5) * 10
             );
             geometry.attributes.size.needsUpdate = true;
         }
@@ -453,7 +476,6 @@
             isStoryActive = true;
             clearTimeout(typeWriterTimer);
             
-            // 轉換 \n 為 <br> 確保換行排版
             actionEl.innerHTML = messageData.action.replace(/\n/g, '<br>');
             actionEl.classList.remove('show');
             quoteEl.innerHTML = '';
@@ -462,16 +484,21 @@
 
             if(isAudioReady && droneSynth) droneSynth.volume.rampTo(-25, 2);
 
-            setTimeout(() => { actionEl.classList.add('show'); }, 1000);
+            setTimeout(() => { actionEl.classList.add('show'); }, 1500); // 延長留白時間讓震波飛一會
 
             setTimeout(() => {
                 let i = 0;
                 function typeWriter() {
                     if (i < messageData.quote.length) {
                         let char = messageData.quote.charAt(i);
-                        quoteEl.innerHTML += char;
                         
-                        if (char.trim() !== '' && !['，', '。'].includes(char)) {
+                        if (char === '\n') {
+                            quoteEl.innerHTML += '<br>';
+                        } else {
+                            quoteEl.innerHTML += char;
+                        }
+                        
+                        if (char.trim() !== '' && char !== '\n' && !['，', '。'].includes(char)) {
                             if(navigator.vibrate) navigator.vibrate(5); 
                             if(isAudioReady && typeNoise) typeNoise.triggerAttackRelease("32n");
                         }
@@ -485,7 +512,7 @@
                     }
                 }
                 typeWriter();
-            }, 3000); 
+            }, 3500); 
         }
 
         function closeStory() {
@@ -495,7 +522,7 @@
             
             darknessOverlay.style.opacity = 1 - progress;
             
-            let colorIntensity = Math.floor(102 + (progress * 153)); 
+            let colorIntensity = Math.floor(68 + (progress * 187)); // 從暗灰過渡到全白
             let colorHex = (colorIntensity << 16) | (colorIntensity << 8) | colorIntensity;
             panoramaMaterial.color.setHex(colorHex);
 
@@ -503,7 +530,7 @@
                 droneSynth.volume.rampTo(-18, 3);
                 droneSynth.frequency.rampTo(100 + progress * 100, 3);
                 hopePad.volume.rampTo(-20 + (progress * 10), 4);
-                bgFilter.frequency.rampTo(200 + (progress * 800), 2);
+                bgFilter.frequency.rampTo(300 + (progress * 800), 2);
             }
 
             setTimeout(() => { 
@@ -511,20 +538,20 @@
                 if (currentStoryIndex >= warMessages.length) {
                     triggerEnding();
                 }
-            }, 1200);
+            }, 1500);
         }
 
         function triggerEnding() {
             isEnding = true;
 
-            // 喚醒所有剩下的成千上萬顆灰燼！場面會震撼無比
+            // 結局喚醒所有剩下的 50,000 顆！這會是視覺的極致
             for (let i = 0; i < particleCount; i++) {
                 const p = particleData[i];
                 if(!p.isAwake) {
                     p.isAwake = true;
                     p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]);
-                    p.velocity.set((Math.random()-0.5)*1.5, Math.random()*3 + 1.5, (Math.random()-0.5)*1.5); 
-                    sizes[i] = p.baseSize * (Math.random() * 1.5 + 1);
+                    p.velocity.set((Math.random()-0.5)*2.5, Math.random()*5 + 2, (Math.random()-0.5)*2.5); 
+                    sizes[i] = p.baseSize * (Math.random() * 2 + 1);
                 }
             }
             geometry.attributes.size.needsUpdate = true;
@@ -535,15 +562,15 @@
             if(isAudioReady) {
                 droneSynth.volume.rampTo(-Infinity, 5); 
                 bgNoise.volume.rampTo(-Infinity, 5);
-                hopePad.volume.rampTo(-8, 3); 
+                hopePad.volume.rampTo(-5, 3); 
                 hopePad.triggerAttack(["C4", "E4", "G4", "B4"], "+1"); 
             }
 
-            if(navigator.vibrate) navigator.vibrate([80, 50, 150, 50, 200, 100, 300, 100, 500, 200, 800]);
+            if(navigator.vibrate) navigator.vibrate([100, 50, 150, 50, 200, 100, 300, 100, 500, 200, 800]);
 
             setTimeout(() => {
                 document.getElementById('final-container').style.opacity = '1';
-            }, 5000);
+            }, 6000);
         }
 
         // --- 動畫迴圈 ---
@@ -551,6 +578,19 @@
 
         function animate() {
             requestAnimationFrame(animate);
+
+            // 處理鏡頭震波復原 (FOV 回彈)
+            if (currentFov !== targetFov) {
+                currentFov += (targetFov - currentFov) * 0.05;
+                camera.fov = currentFov;
+                camera.updateProjectionMatrix();
+            }
+
+            const time = clock.getElapsedTime();
+
+            // 增加如電影般的鏡頭漂浮感 (Camera Sway)
+            let swayX = Math.sin(time * 0.5) * 5;
+            let swayY = Math.cos(time * 0.3) * 5;
 
             if (!isDragging && !isStoryActive) {
                 lon += 0.04; 
@@ -561,12 +601,11 @@
             const theta = THREE.MathUtils.degToRad(lon);
             
             camera.lookAt(
-                500 * Math.sin(phi) * Math.cos(theta),
-                500 * Math.cos(phi),
+                500 * Math.sin(phi) * Math.cos(theta) + swayX,
+                500 * Math.cos(phi) + swayY,
                 500 * Math.sin(phi) * Math.sin(theta)
             );
 
-            const time = clock.getElapsedTime();
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
 
@@ -577,10 +616,10 @@
                 positions[i * 3 + 1] += p.velocity.y;
                 positions[i * 3 + 2] += p.velocity.z;
 
-                if (positions[i * 3 + 1] < -400 && !p.isAwake) {
-                    positions[i * 3 + 1] = 400; 
-                } else if (positions[i * 3 + 1] > 400 && p.isAwake) {
-                    positions[i * 3 + 1] = -400; 
+                if (positions[i * 3 + 1] < -600 && !p.isAwake) {
+                    positions[i * 3 + 1] = 600; 
+                } else if (positions[i * 3 + 1] > 600 && p.isAwake) {
+                    positions[i * 3 + 1] = -600; 
                 }
 
                 if (p.isAwake) {
@@ -590,18 +629,19 @@
                         const newAngle = angle + (0.015 * (200/Math.max(radius, 10))); 
                         positions[i * 3] = Math.cos(newAngle) * radius;
                         positions[i * 3 + 2] = Math.sin(newAngle) * radius;
-                        positions[i * 3 + 1] += Math.random() * 0.8; 
+                        positions[i * 3 + 1] += Math.random() * 1.2; // 結局飛射更猛烈
                     } else {
-                        p.velocity.x *= 0.96;
-                        p.velocity.z *= 0.96;
-                        if (p.velocity.y > 0.5) p.velocity.y *= 0.98; 
+                        // 空氣阻力
+                        p.velocity.x *= 0.94;
+                        p.velocity.z *= 0.94;
+                        if (p.velocity.y > 0.4) p.velocity.y *= 0.95; 
                         
-                        positions[i * 3] += Math.sin(time * 1.5 + i) * 0.4; 
+                        positions[i * 3] += Math.sin(time * 1.5 + i) * 0.6; 
                     }
 
-                    p.currentColor.lerp(p.targetColor, 0.05); 
+                    p.currentColor.lerp(p.targetColor, 0.08); 
                     
-                    let flicker = 0.6 + Math.sin(time * 6 + p.phase) * 0.4; 
+                    let flicker = 0.5 + Math.sin(time * 6 + p.phase) * 0.5; 
                     colAttr.setXYZ(i, p.currentColor.r * flicker, p.currentColor.g * flicker, p.currentColor.b * flicker);
                 }
             }
@@ -609,7 +649,7 @@
             posAttr.needsUpdate = true;
             colAttr.needsUpdate = true;
 
-            particles.rotation.y = time * 0.015;
+            particles.rotation.y = time * 0.01;
 
             renderer.render(scene, camera);
         }
