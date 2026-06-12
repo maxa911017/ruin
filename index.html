@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght=200;300;400;600&display=swap');
 
         body, html {
             margin: 0; padding: 0; 
@@ -187,6 +187,44 @@
         let isAudioReady = false;
         let droneSynth, hopePad, chimeSynth, typeNoise, bgNoise, bgFilter, boomSynth;
 
+        // ==========================================
+        // 【核心新增】iOS 前台後台主動喚醒防凍結系統
+        // ==========================================
+        function resumeAudioEngine() {
+            if (isAudioReady) {
+                console.log("偵測到 App 重新開啟，正在嘗試強力重啟音訊...");
+                // 1. 重啟 Tone.js 的 AudioContext
+                if (typeof Tone !== 'undefined' && Tone.context) {
+                    if (Tone.context.state !== 'running') {
+                        Tone.context.resume().then(() => {
+                            console.log("Tone.js 成功復原！");
+                        }).catch(e => console.error("Tone.js 重啟失敗:", e));
+                    }
+                }
+                // 2. 重置背景時鐘防止動畫時間跳躍
+                if (typeof clock !== 'undefined') {
+                    // 暫停一下再重啟，避免時間差產生的計算錯誤
+                    clock.getDelta(); 
+                }
+            }
+        }
+
+        // 監聽網頁原生的狀態改變（解鎖螢幕、切換焦點、回到視窗）
+        window.addEventListener('pageshow', resumeAudioEngine);
+        window.addEventListener('focus', resumeAudioEngine);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                resumeAudioEngine();
+            }
+        });
+
+        // 接收來自 Xcode SwiftUI 傳入的強行解凍事件
+        window.addEventListener('message', (event) => {
+            if (event.data === 'app-will-enter-foreground') {
+                resumeAudioEngine();
+            }
+        });
+
         async function initAudio() {
             if (isAudioReady) return;
             try {
@@ -273,7 +311,7 @@
         // ==========================================
         // 歷史級突破！80,000 顆粒子的極致螢火蟲之墓氛圍
         // ==========================================
-        const particleCount = 500000; 
+        const particleCount = 300000; 
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
@@ -301,7 +339,7 @@
             positions[i * 3 + 1] = (Math.random() - 0.5) * 1500;
             positions[i * 3 + 2] = (Math.random() - 0.5) * 1500; 
 
-            // 驚人的 35% 比例 (約 28,000顆) 一開始就已點亮！
+            // 驚人的 35% 比例 (約 17,500顆) 一開始就已點亮！
             let isPreLit = Math.random() < 0.35;
             
             if (isPreLit) {
@@ -544,7 +582,7 @@
         function triggerEnding() {
             isEnding = true;
 
-            // 結局：喚醒全部 80,000 顆！這會是視覺的盛宴
+            // 結局：喚醒全部 50,000 顆！這會是視覺的盛宴
             for (let i = 0; i < particleCount; i++) {
                 const p = particleData[i];
                 if(!p.isAwake) {
