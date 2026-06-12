@@ -53,7 +53,7 @@
         /* 極致壓迫的黑暗邊緣 (Vignette) */
         #darkness-overlay {
             position: absolute; inset: 0; pointer-events: none; z-index: 2;
-            background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%);
+            background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%);
             transition: opacity 4s ease-in-out;
         }
 
@@ -80,32 +80,34 @@
         #story-overlay.active { opacity: 1; pointer-events: auto; }
         
         /* ---------------------------------------------------- */
-        /* 絕對防跑版的電影字幕排版 */
+        /* 絕對防跑版的電影字幕排版 (詩意換行 + Balance) */
         /* ---------------------------------------------------- */
         .story-text-container { 
-            width: 85vw; /* 安全寬度 */
-            max-width: 600px; 
+            width: 95vw; /* 擴大安全寬度，避免過早換行 */
+            max-width: 700px; 
             margin: 0 auto;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         
         #action-text {
-            color: #999; font-size: clamp(0.9rem, 4vw, 1.1rem); letter-spacing: 0.2em; line-height: 2;
+            color: #999; font-size: clamp(0.9rem, 4.5vw, 1.15rem); letter-spacing: 0.15em; line-height: 2;
             margin-bottom: 5vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
             border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3vh;
             font-weight: 300; filter: blur(5px);
             
             display: block; width: 100%; text-align: center;
-            word-break: normal; overflow-wrap: break-word; white-space: normal;
+            overflow-wrap: break-word; word-break: normal; white-space: normal;
+            text-wrap: balance; /* 讓多行文字視覺上完美平衡置中 */
         }
         #action-text.show { opacity: 1; filter: blur(0px); }
         
         #quote-text {
-            color: #ffcc66; font-size: clamp(1.1rem, 5.5vw, 1.6rem); letter-spacing: 0.15em; line-height: 2.2;
+            color: #ffcc66; font-size: clamp(1.15rem, 5.5vw, 1.6rem); letter-spacing: 0.1em; line-height: 2.2;
             text-shadow: 0 0 25px rgba(255, 204, 102, 0.4); min-height: 25vh; font-weight: 300;
             
             display: block; width: 100%; text-align: center;
-            word-break: normal; overflow-wrap: break-word; white-space: normal;
+            overflow-wrap: break-word; word-break: normal; white-space: normal;
+            line-break: strict; /* 嚴格禁止標點符號出現在行首 */
         }
         
         .typewriter-cursor::after {
@@ -117,18 +119,20 @@
         #final-container {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             text-align: center; opacity: 0; transition: opacity 6s ease-in; z-index: 15; pointer-events: none; 
-            width: 90vw; max-width: 800px; padding: 0 2vw; box-sizing: border-box;
+            width: 90vw; max-width: 800px; box-sizing: border-box;
         }
         #final-text {
             font-size: clamp(1.8rem, 8vw, 4rem); font-weight: 300; letter-spacing: 0.3em;
             color: #fff; text-shadow: 0 0 50px rgba(255, 200, 100, 1), 0 0 100px rgba(255, 100, 50, 0.6);
             margin-bottom: 4vh; margin-left: 0.15em;
             display: block; overflow-wrap: break-word; white-space: normal; line-height: 1.5;
+            text-wrap: balance;
         }
         #final-subtext {
             font-size: clamp(0.9rem, 4vw, 1.4rem); color: rgba(255, 220, 150, 0.95);
             letter-spacing: 0.3em; font-weight: 200; margin-left: 0.15em; text-shadow: 0 0 15px #000;
             display: block; overflow-wrap: break-word; white-space: normal; line-height: 2;
+            text-wrap: balance;
         }
 
         /* 巨大震波漣漪 */
@@ -211,7 +215,6 @@
                 }).connect(reverb);
                 chimeSynth.volume.value = -12;
 
-                // 新增：核彈級低頻重擊音效 (Shockwave Boom)
                 boomSynth = new Tone.MembraneSynth({
                     pitchDecay: 0.08, octaves: 6, oscillator: { type: "sine" },
                     envelope: { attack: 0.001, decay: 2.5, sustain: 0, release: 2 }
@@ -234,12 +237,12 @@
         let isEnding = false;
         let currentStoryIndex = 0;
 
-        // 完美換行的文字
+        // 【終極排版解法】：利用 \n 精準控制詩意斷句，避免單字孤立。
         const warMessages = [
             { action: "你撥開瓦礫，觸碰了一面碎裂的螢幕。\n微弱的亮光，宛如它不甘的脈搏。", quote: "「電量剩 2%。\n如果我沒能出去，請幫我照顧好媽媽。」" },
-            { action: "灰燼掩埋著一個失去溫度的鐵盒，\n裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。\n小寶，爸爸永遠愛你，你要勇敢。」" },
-            { action: "你拾起一張被戰火燒毀一半的紙條，\n上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，但我不敢出去。\n好冷。」" },
-            { action: "在沒有訊號的荒原裡，\n一個紅色驚嘆號將最後的愛意，永遠困在了發件匣。", quote: "「他們說救援不會來了。\n我們把最後的水留給了孩子。」" },
+            { action: "灰燼掩埋著一個失去溫度的鐵盒，\n裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。\n小寶，爸爸永遠愛你，\n你要勇敢。」" },
+            { action: "你拾起一張被戰火燒毀一半的紙條，\n上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，\n但我不敢出去。\n好冷。」" },
+            { action: "在沒有訊號的荒原裡，\n一個紅色驚嘆號將最後的愛意，\n永遠困在了發件匣。", quote: "「他們說救援不會來了。\n我們把最後的水留給了孩子。」" },
             { action: "在最深最深的黑夜中，\n一卷底片記錄下了他們對黎明最後的渴望。", quote: "「天亮了。\n這可能是我最後一次看到日出...」" }
         ];
 
@@ -247,10 +250,9 @@
         const container3D = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
         
-        // 攝影機預設 FOV 70，爆炸時會動態改變
         let currentFov = 70;
         let targetFov = 70;
-        const camera = new THREE.PerspectiveCamera(currentFov, window.innerWidth / window.innerHeight, 0.1, 1500);
+        const camera = new THREE.PerspectiveCamera(currentFov, window.innerWidth / window.innerHeight, 0.1, 1800);
         
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -258,20 +260,20 @@
         container3D.appendChild(renderer.domElement);
 
         const textureLoader = new THREE.TextureLoader();
-        const panoramaGeo = new THREE.SphereGeometry(800, 60, 40);
+        const panoramaGeo = new THREE.SphereGeometry(900, 60, 40); // 稍微放大環景球體
         panoramaGeo.scale(-1, 1, 1); 
         
         const panoramaMaterial = new THREE.MeshBasicMaterial({
             map: textureLoader.load(PANORAMA_IMAGE_URL),
-            color: 0x444444 // 極深的廢墟背景
+            color: 0x333333 // 初始更深沉，強化後續對比
         });
         const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMaterial);
         scene.add(panoramaMesh);
 
         // ==========================================
-        // 終極突破！50,000 顆粒子的爆量螢火蟲之墓氛圍
+        // 歷史級突破！80,000 顆粒子的極致螢火蟲之墓氛圍
         // ==========================================
-        const particleCount = 50000; 
+        const particleCount = 500000; 
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
@@ -284,38 +286,39 @@
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
             grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            grad.addColorStop(0.1, 'rgba(255, 230, 150, 1)');
-            grad.addColorStop(0.4, 'rgba(255, 120, 30, 0.5)');
+            grad.addColorStop(0.1, 'rgba(255, 240, 180, 1)');
+            grad.addColorStop(0.4, 'rgba(255, 130, 40, 0.5)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(canvas);
         }
 
-        const fireflyColors = [0xffcc44, 0xffee88, 0xff9922, 0xffffaa]; 
+        const fireflyColors = [0xffcc44, 0xffee88, 0xff9922, 0xffffaa, 0xffbb55]; 
 
         for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 1200;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 1200;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 1200; 
+            // 在更廣闊的 3D 空間中均勻分佈
+            positions[i * 3] = (Math.random() - 0.5) * 1500;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 1500;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 1500; 
 
-            // 設定 40% (高達 20,000顆) 的粒子一開始就在滿天飛舞
-            let isPreLit = Math.random() < 0.4;
+            // 驚人的 35% 比例 (約 28,000顆) 一開始就已點亮！
+            let isPreLit = Math.random() < 0.35;
             
             if (isPreLit) {
                 let randomColor = fireflyColors[Math.floor(Math.random() * fireflyColors.length)];
                 let c = new THREE.Color(randomColor);
                 colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-                sizes[i] = Math.random() * 8 + 4; // 發光粒子更大更明顯
+                sizes[i] = Math.random() * 8 + 4; // 發光粒子大且顯眼
             } else {
                 colors[i * 3] = 0.15 + Math.random() * 0.05;
                 colors[i * 3 + 1] = 0.15 + Math.random() * 0.05;
                 colors[i * 3 + 2] = 0.2 + Math.random() * 0.1;
-                sizes[i] = Math.random() * 2 + 1; // 暗灰燼
+                sizes[i] = Math.random() * 2.5 + 1; // 灰燼
             }
 
             particleData.push({
                 velocity: isPreLit 
-                    ? new THREE.Vector3((Math.random()-0.5)*0.5, Math.random()*0.8 + 0.2, (Math.random()-0.5)*0.5) 
+                    ? new THREE.Vector3((Math.random()-0.5)*0.6, Math.random()*0.8 + 0.2, (Math.random()-0.5)*0.6) 
                     : new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.5 - 0.1, (Math.random()-0.5)*0.1),
                 isAwake: isPreLit,
                 targetColor: new THREE.Color(isPreLit ? fireflyColors[Math.floor(Math.random() * fireflyColors.length)] : 0x000000),
@@ -331,7 +334,8 @@
 
         const material = new THREE.PointsMaterial({
             size: 3.5, map: createGlowTexture(), vertexColors: true,
-            transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false
+            transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false,
+            sizeAttenuation: true
         });
 
         const particles = new THREE.Points(geometry, material);
@@ -379,9 +383,9 @@
             }, 2000);
         });
 
-        // 點擊觸發邏輯：核彈級引爆 2000~5000 顆！並伴隨鏡頭震波
+        // 點擊觸發邏輯：引爆 4,000 ~ 8,000 顆！真實星爆感
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Points.threshold = 150; 
+        raycaster.params.Points.threshold = 200; 
         let typeWriterTimer;
 
         function handleTapInteraction(clientX, clientY) {
@@ -399,24 +403,23 @@
                 hitPoint.copy(intersects[0].point);
             } else {
                 camera.getWorldDirection(hitPoint);
-                hitPoint.multiplyScalar(400 + Math.random()*200).add(camera.position);
+                hitPoint.multiplyScalar(500 + Math.random()*200).add(camera.position);
             }
 
-            // 鏡頭震波特效 (Camera Shockwave)
-            currentFov = 95; // 瞬間拉廣角
-            targetFov = 70;  // 然後慢慢彈回
+            // 鏡頭強烈震波特效
+            currentFov = 105; 
+            targetFov = 70;  
 
-            // 引爆螢火蟲群！數量核彈級爆發
+            // 引爆海量螢火蟲群
             let awakenCount = 0;
-            let burstAmount = 3000 + Math.random() * 3000; 
+            let burstAmount = 4000 + Math.random() * 4000; 
             
             for(let i=0; i<particleCount; i++) {
                 if(!particleData[i].isAwake) {
                     let px = positions[i*3], py = positions[i*3+1], pz = positions[i*3+2];
                     let distSq = (px-hitPoint.x)**2 + (py-hitPoint.y)**2 + (pz-hitPoint.z)**2;
                     
-                    // 無視距離的強制連鎖反應
-                    if(distSq < 400000 || awakenCount < 500) { 
+                    if(distSq < 600000 || awakenCount < 800) { 
                         awakenParticle(i);
                         awakenCount++;
                         if(awakenCount >= burstAmount) break;
@@ -426,14 +429,12 @@
 
             createRipple(clientX, clientY);
 
-            // 頂級聽覺反饋：敲擊星星聲 + 爆炸低鳴
             if (isAudioReady) {
                 if(chimeSynth) chimeSynth.triggerAttackRelease(chimeNotes[currentStoryIndex % chimeNotes.length], "1n"); 
-                if(boomSynth) boomSynth.triggerAttackRelease("C1", "1n"); // 深沉的轟鳴
+                if(boomSynth) boomSynth.triggerAttackRelease("C1", "1n"); 
             }
             
-            // 強烈多段震動
-            if(navigator.vibrate) navigator.vibrate([100, 30, 100, 30, 150]); 
+            if(navigator.vibrate) navigator.vibrate([120, 40, 100, 30, 180]); 
 
             if (currentStoryIndex < warMessages.length) {
                 openStory(warMessages[currentStoryIndex]);
@@ -456,13 +457,12 @@
             const p = particleData[idx];
             p.isAwake = true;
             p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]); 
-            sizes[idx] = p.baseSize * (Math.random() * 3.5 + 1.5); 
+            sizes[idx] = p.baseSize * (Math.random() * 4 + 1.5); 
             
-            // 更瘋狂的爆發動能
             p.velocity.set(
-                (Math.random()-0.5) * 10, 
-                Math.random() * 8 + 2, 
-                (Math.random()-0.5) * 10
+                (Math.random()-0.5) * 15, 
+                Math.random() * 10 + 3, 
+                (Math.random()-0.5) * 15
             );
             geometry.attributes.size.needsUpdate = true;
         }
@@ -484,7 +484,7 @@
 
             if(isAudioReady && droneSynth) droneSynth.volume.rampTo(-25, 2);
 
-            setTimeout(() => { actionEl.classList.add('show'); }, 1500); // 延長留白時間讓震波飛一會
+            setTimeout(() => { actionEl.classList.add('show'); }, 1500); 
 
             setTimeout(() => {
                 let i = 0;
@@ -492,6 +492,7 @@
                     if (i < messageData.quote.length) {
                         let char = messageData.quote.charAt(i);
                         
+                        // 正確處理手動換行符號
                         if (char === '\n') {
                             quoteEl.innerHTML += '<br>';
                         } else {
@@ -519,10 +520,9 @@
             storyOverlay.classList.remove('active');
             
             let progress = currentStoryIndex / warMessages.length;
-            
             darknessOverlay.style.opacity = 1 - progress;
             
-            let colorIntensity = Math.floor(68 + (progress * 187)); // 從暗灰過渡到全白
+            let colorIntensity = Math.floor(51 + (progress * 204)); // 從極暗過渡到全白
             let colorHex = (colorIntensity << 16) | (colorIntensity << 8) | colorIntensity;
             panoramaMaterial.color.setHex(colorHex);
 
@@ -544,14 +544,14 @@
         function triggerEnding() {
             isEnding = true;
 
-            // 結局喚醒所有剩下的 50,000 顆！這會是視覺的極致
+            // 結局：喚醒全部 80,000 顆！這會是視覺的盛宴
             for (let i = 0; i < particleCount; i++) {
                 const p = particleData[i];
                 if(!p.isAwake) {
                     p.isAwake = true;
                     p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]);
-                    p.velocity.set((Math.random()-0.5)*2.5, Math.random()*5 + 2, (Math.random()-0.5)*2.5); 
-                    sizes[i] = p.baseSize * (Math.random() * 2 + 1);
+                    p.velocity.set((Math.random()-0.5)*3.5, Math.random()*6 + 2, (Math.random()-0.5)*3.5); 
+                    sizes[i] = p.baseSize * (Math.random() * 2.5 + 1);
                 }
             }
             geometry.attributes.size.needsUpdate = true;
@@ -562,7 +562,7 @@
             if(isAudioReady) {
                 droneSynth.volume.rampTo(-Infinity, 5); 
                 bgNoise.volume.rampTo(-Infinity, 5);
-                hopePad.volume.rampTo(-5, 3); 
+                hopePad.volume.rampTo(-3, 3); 
                 hopePad.triggerAttack(["C4", "E4", "G4", "B4"], "+1"); 
             }
 
@@ -579,7 +579,6 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // 處理鏡頭震波復原 (FOV 回彈)
             if (currentFov !== targetFov) {
                 currentFov += (targetFov - currentFov) * 0.05;
                 camera.fov = currentFov;
@@ -587,8 +586,6 @@
             }
 
             const time = clock.getElapsedTime();
-
-            // 增加如電影般的鏡頭漂浮感 (Camera Sway)
             let swayX = Math.sin(time * 0.5) * 5;
             let swayY = Math.cos(time * 0.3) * 5;
 
@@ -616,10 +613,10 @@
                 positions[i * 3 + 1] += p.velocity.y;
                 positions[i * 3 + 2] += p.velocity.z;
 
-                if (positions[i * 3 + 1] < -600 && !p.isAwake) {
-                    positions[i * 3 + 1] = 600; 
-                } else if (positions[i * 3 + 1] > 600 && p.isAwake) {
-                    positions[i * 3 + 1] = -600; 
+                if (positions[i * 3 + 1] < -750 && !p.isAwake) {
+                    positions[i * 3 + 1] = 750; 
+                } else if (positions[i * 3 + 1] > 750 && p.isAwake) {
+                    positions[i * 3 + 1] = -750; 
                 }
 
                 if (p.isAwake) {
@@ -629,14 +626,13 @@
                         const newAngle = angle + (0.015 * (200/Math.max(radius, 10))); 
                         positions[i * 3] = Math.cos(newAngle) * radius;
                         positions[i * 3 + 2] = Math.sin(newAngle) * radius;
-                        positions[i * 3 + 1] += Math.random() * 1.2; // 結局飛射更猛烈
+                        positions[i * 3 + 1] += Math.random() * 1.5; 
                     } else {
-                        // 空氣阻力
-                        p.velocity.x *= 0.94;
-                        p.velocity.z *= 0.94;
-                        if (p.velocity.y > 0.4) p.velocity.y *= 0.95; 
+                        p.velocity.x *= 0.93;
+                        p.velocity.z *= 0.93;
+                        if (p.velocity.y > 0.4) p.velocity.y *= 0.94; 
                         
-                        positions[i * 3] += Math.sin(time * 1.5 + i) * 0.6; 
+                        positions[i * 3] += Math.sin(time * 1.5 + i) * 0.8; 
                     }
 
                     p.currentColor.lerp(p.targetColor, 0.08); 
