@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>灰燼與微光 - 360環景沈浸版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;600&display=swap');
+
+        /* 鎖定原生 APP 行為，防止一切跑版與下拉更新 */
+        body, html {
+            margin: 0; padding: 0; 
+            width: 100vw; height: 100dvh; /* 使用 dvh 確保無視瀏覽器上下控制列 */
+            background-color: #000; overflow: hidden;
+            font-family: 'Noto Serif TC', serif;
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+            touch-action: none; overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .grain {
+            position: fixed; inset: 0;
+            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtP38+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJklEQVQ4y2NgGAWjYBSMglEwCkbBKBgFo2AUjIJRMApGwSgYBaNgFAwAAwB7AQABK5Sj1AAAAABJRU5ErkJggg==');
+            opacity: 0.08; pointer-events: none; z-index: 999;
+            animation: grainShift 0.4s steps(2) infinite;
+        }
+        @keyframes grainShift { 0% { background-position: 0 0; } 100% { background-position: 10px 10px; } }
+
+        #init-screen {
+            position: fixed; inset: 0; z-index: 1000; background: #000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 2s ease-in-out; cursor: pointer;
+        }
+        .init-text {
+            color: rgba(255, 255, 255, 0.7); font-size: clamp(1rem, 4vw, 1.2rem);
+            letter-spacing: 0.5em; font-weight: 300; margin-left: 0.5em;
+            animation: pulse-slow 4s infinite; text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+        .init-subtext {
+            color: rgba(255, 255, 255, 0.3); font-size: 0.75rem; letter-spacing: 0.2em; margin-top: 4vh;
+        }
+
+        #webgl-container { position: absolute; inset: 0; z-index: 1; }
+
+        #darkness-overlay {
+            position: absolute; inset: 0; pointer-events: none; z-index: 2;
+            background: rgba(0, 0, 0, 0.6); /* 用於疊加在 360 圖上的絕望感 */
+            transition: background-color 3s ease-in-out, opacity 4s ease-in-out;
+        }
+
+        #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+        .instruction {
+            position: absolute; bottom: 12%; color: rgba(255, 255, 255, 0.6);
+            font-size: 0.95rem; letter-spacing: 0.5em;
+            animation: pulse-slow 4s infinite; text-align: center;
+            transition: opacity 2s ease; text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+        .hidden-hint { opacity: 0; pointer-events: none; }
+        @keyframes pulse-slow { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+        #story-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background-color: rgba(0, 0, 0, 0.85); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        #story-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .story-text-container { width: 100vw; padding: 0 8vw; box-sizing: border-box; text-align: center; }
+        
+        #action-text {
+            color: #8a8a8a; font-size: clamp(0.9rem, 4vw, 1.15rem); letter-spacing: 0.25em; line-height: 2.2;
+            margin-bottom: 6vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 3vh;
+            font-weight: 300; filter: blur(5px);
+        }
+        #action-text.show { opacity: 1; filter: blur(0px); }
+        
+        #quote-text {
+            color: #ffb86c; font-size: clamp(1.15rem, 5vw, 1.6rem); letter-spacing: 0.15em; line-height: 2.4;
+            text-shadow: 0 0 25px rgba(255, 184, 108, 0.25); min-height: 20vh;
+            display: flex; align-items: center; justify-content: center; font-weight: 300;
+        }
+        .typewriter-cursor::after {
+            content: '|'; color: #ffb86c; animation: blink 1s step-end infinite; margin-left: 5px; opacity: 0.8;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        #final-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; opacity: 0; transition: opacity 6s ease-in; z-index: 15; pointer-events: none; width: 100%;
+        }
+        #final-text {
+            font-size: clamp(1.8rem, 6vw, 3.5rem); font-weight: 300; letter-spacing: 0.4em;
+            color: #fff; text-shadow: 0 0 40px rgba(255, 200, 100, 0.9), 0 0 80px rgba(255, 100, 50, 0.5);
+            white-space: nowrap; margin-bottom: 2vh; margin-left: 0.2em;
+        }
+        #final-subtext {
+            font-size: clamp(0.85rem, 3vw, 1.2rem); color: rgba(255, 200, 150, 0.8);
+            letter-spacing: 0.5em; font-weight: 200; margin-left: 0.25em; text-shadow: 0 0 10px #000;
+        }
+
+        .ripple {
+            position: absolute; border: 1px solid rgba(255, 200, 100, 0.9);
+            border-radius: 50%; transform: translate(-50%, -50%) scale(0);
+            pointer-events: none; z-index: 5;
+            animation: ripple-anim 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes ripple-anim {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 30px rgba(255, 150, 50, 0.9) inset; }
+            50% { opacity: 0.4; border-width: 2px; }
+            100% { transform: translate(-50%, -50%) scale(5); opacity: 0; box-shadow: 0 0 0px rgba(255, 150, 50, 0) inset; border-width: 0px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grain"></div>
+
+    <div id="init-screen">
+        <div class="init-text">輕觸畫面，進入廢墟</div>
+        <div class="init-subtext">為獲得最佳體驗，請佩戴耳機並開啟聲音</div>
+    </div>
+
+    <div id="darkness-overlay"></div>
+    <div id="webgl-container"></div>
+    
+    <div id="ui-layer">
+        <div id="hint-text" class="instruction hidden-hint">滑動環視四周，觸碰飛灰傾聽思念</div>
+        
+        <div id="final-container">
+            <div id="final-text">一切都會變得更好</div>
+            <div id="final-subtext">那些未曾送達的愛，終將化作照亮黑夜的星火</div>
+        </div>
+    </div>
+
+    <div id="story-overlay">
+        <div class="story-text-container">
+            <p id="action-text"></p>
+            <div id="quote-text"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 【替換圖片】請在這裡將路徑替換為你的 360 環景圖檔名
+        // 建議圖片比例為 2:1，例如 4096x2048 解析度的 jpg
+        // ==========================================
+        const PANORAMA_IMAGE_URL = 'ruin.jpg';
+        
+        // --- 音效引擎 (Tone.js) ---
+        let isAudioReady = false;
+        let droneSynth, hopePad, chimeSynth, typeNoise, bgNoise, bgFilter;
+
+        async function initAudio() {
+            if (isAudioReady) return;
+            try {
+                await Tone.start();
+                bgFilter = new Tone.Filter(200, "lowpass").toDestination();
+                bgNoise = new Tone.Noise("pink").connect(bgFilter);
+                bgNoise.volume.value = -12;
+
+                droneSynth = new Tone.FMSynth({
+                    harmonicity: 0.5, modulationIndex: 5,
+                    oscillator: { type: "sine" }, modulation: { type: "triangle" },
+                    envelope: { attack: 4, decay: 2, sustain: 1, release: 5 }
+                }).toDestination();
+                droneSynth.volume.value = -15;
+
+                const reverb = new Tone.Reverb({ decay: 8, wet: 0.6 }).toDestination();
+                hopePad = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" }, envelope: { attack: 3, decay: 2, sustain: 0.8, release: 5 }
+                }).connect(reverb);
+                hopePad.volume.value = -Infinity;
+
+                chimeSynth = new Tone.PolySynth(Tone.MetalSynth, {
+                    frequency: 250, envelope: { attack: 0.01, decay: 1.5, release: 1 },
+                    harmonicity: 4, modulationIndex: 20, resonance: 4000, octaves: 1.5
+                }).connect(reverb);
+                chimeSynth.volume.value = -18;
+
+                typeNoise = new Tone.NoiseSynth({
+                    noise: { type: 'brown' }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.05 }
+                }).toDestination();
+                typeNoise.volume.value = -25;
+
+                isAudioReady = true;
+                bgNoise.start();
+                droneSynth.triggerAttack("C2");
+                hopePad.triggerAttack(["C3", "G3"]);
+            } catch (error) { console.error("Audio init failed:", error); }
+        }
+
+        let isStoryActive = false;
+        let isEnding = false;
+        let currentStoryIndex = 0;
+
+        const warMessages = [
+            { action: "你撥開瓦礫，觸碰了一面碎裂的螢幕。<br>微弱的亮光，宛如它不甘的脈搏。", quote: "「電量剩 2%。如果我沒能出去，請幫我照顧好媽媽。」" },
+            { action: "灰燼掩埋著一個失去溫度的鐵盒，<br>裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。小寶，爸爸永遠愛你，你要勇敢。」" },
+            { action: "你拾起一張被戰火燒毀一半的紙條，<br>上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，但我不敢出去。好冷。」" },
+            { action: "在沒有訊號的荒原裡，<br>一個紅色驚嘆號將最後的愛意，永遠困在了發件匣。", quote: "「他們說救援不會來了。我們把最後的水留給了孩子。」" },
+            { action: "在最深最深的黑夜中，<br>一卷底片記錄下了他們對黎明，最後的渴望。", quote: "「天亮了。這可能是我最後一次看到日出...」" }
+        ];
+
+        // --- Three.js 系統與 360 環景 ---
+        const container3D = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1500);
+        
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container3D.appendChild(renderer.domElement);
+
+        // 1. 載入 360 環景圖
+        const textureLoader = new THREE.TextureLoader();
+        const panoramaGeo = new THREE.SphereGeometry(800, 60, 40);
+        panoramaGeo.scale(-1, 1, 1); // 翻轉球體，讓我們可以看到內部
+        
+        const panoramaMaterial = new THREE.MeshBasicMaterial({
+            map: textureLoader.load(PANORAMA_IMAGE_URL),
+            color: 0x111111 // 初始非常昏暗，保留廢墟氛圍
+        });
+        const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMaterial);
+        scene.add(panoramaMesh);
+
+        // 2. 建立粒子系統
+        const particleCount = 2000; 
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+        const particleData = [];
+
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.2, 'rgba(255,200,100,0.8)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            // 在 360 空間中散佈粒子
+            positions[i * 3] = (Math.random() - 0.5) * 800;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 800; 
+
+            colors[i * 3] = 0.15 + Math.random() * 0.05;
+            colors[i * 3 + 1] = 0.15 + Math.random() * 0.05;
+            colors[i * 3 + 2] = 0.2 + Math.random() * 0.1;
+
+            sizes[i] = Math.random() * 2 + 1;
+
+            particleData.push({
+                velocity: new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.4 - 0.1, (Math.random()-0.5)*0.1),
+                isAwake: false,
+                targetColor: new THREE.Color(),
+                currentColor: new THREE.Color(colors[i*3], colors[i*3+1], colors[i*3+2]),
+                baseSize: sizes[i]
+            });
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        const material = new THREE.PointsMaterial({
+            size: 2.5, map: createGlowTexture(), vertexColors: true,
+            transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // --- 360 滑動控制與點擊邏輯 ---
+        let isDragging = false;
+        let dragDistance = 0;
+        let pointerDownX = 0, pointerDownY = 0;
+        let lon = 0, lat = 0; // 經緯度視角
+        let savedLon = 0, savedLat = 0;
+
+        container3D.addEventListener('pointerdown', (e) => {
+            if (document.getElementById('init-screen').style.display !== 'none' || isStoryActive) return;
+            isDragging = true;
+            dragDistance = 0;
+            pointerDownX = e.clientX;
+            pointerDownY = e.clientY;
+            savedLon = lon;
+            savedLat = lat;
+        });
+
+        container3D.addEventListener('pointermove', (e) => {
+            if (isDragging) {
+                // 計算滑動距離更新視角
+                lon = savedLon - (e.clientX - pointerDownX) * 0.15;
+                lat = savedLat + (e.clientY - pointerDownY) * 0.15;
+                dragDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
+            }
+        });
+
+        container3D.addEventListener('pointerup', (e) => {
+            isDragging = false;
+            // 如果拖拉距離很短，我們視為「點擊 (Tap)」來觸發螢火蟲
+            if (dragDistance < 15 && !isStoryActive && !isEnding && document.getElementById('init-screen').style.display === 'none') {
+                handleTapInteraction(e.clientX, e.clientY);
+            }
+        });
+
+        // 啟動畫面邏輯
+        document.getElementById('init-screen').addEventListener('click', async () => {
+            await initAudio();
+            const initScreen = document.getElementById('init-screen');
+            initScreen.style.opacity = '0';
+            setTimeout(() => {
+                initScreen.style.display = 'none';
+                document.getElementById('hint-text').classList.remove('hidden-hint');
+            }, 2000);
+        });
+
+        // 點擊觸發邏輯
+        const raycaster = new THREE.Raycaster();
+        raycaster.params.Points.threshold = 50; // 放大判定範圍，適應 360 空間
+        let typeWriterTimer;
+
+        function handleTapInteraction(clientX, clientY) {
+            document.getElementById('hint-text').classList.add('hidden-hint');
+
+            let mouse3D = new THREE.Vector2();
+            mouse3D.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse3D.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse3D, camera);
+            const intersects = raycaster.intersectObject(particles);
+
+            let hitIndex = -1;
+            if (intersects.length > 0) {
+                for(let i=0; i<intersects.length; i++) {
+                    if (!particleData[intersects[i].index].isAwake) {
+                        hitIndex = intersects[i].index;
+                        break;
+                    }
+                }
+            } 
+            
+            // 防呆：如果沒點中精準的粒子，就近隨機挑一顆未喚醒的點亮
+            if (hitIndex === -1) {
+                let fallbackIdx = Math.floor(Math.random() * particleCount);
+                while(particleData[fallbackIdx].isAwake) { fallbackIdx = Math.floor(Math.random() * particleCount); }
+                hitIndex = fallbackIdx;
+            }
+
+            awakenParticle(hitIndex, clientX, clientY);
+        }
+
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 2000);
+        }
+
+        const chimeNotes = ["C5", "E5", "G5", "B5", "D6"];
+
+        function awakenParticle(idx, x, y) {
+            const p = particleData[idx];
+            p.isAwake = true;
+            p.targetColor.setHex(0xffa23a); 
+            sizes[idx] = p.baseSize * 8; // 螢火蟲放大
+            
+            p.velocity.set((Math.random()-0.5)*0.3, Math.random()*0.5 + 0.3, (Math.random()-0.5)*0.3);
+            geometry.attributes.size.needsUpdate = true;
+
+            createRipple(x, y);
+
+            if (isAudioReady && chimeSynth) {
+                let note = chimeNotes[currentStoryIndex % chimeNotes.length];
+                chimeSynth.triggerAttackRelease(note, "4n");
+            }
+            if(navigator.vibrate) navigator.vibrate([40, 60, 30]); 
+
+            if (currentStoryIndex < warMessages.length) {
+                openStory(warMessages[currentStoryIndex]);
+                currentStoryIndex++;
+            }
+        }
+
+        const storyOverlay = document.getElementById('story-overlay');
+        const actionEl = document.getElementById('action-text');
+        const quoteEl = document.getElementById('quote-text');
+        const darknessOverlay = document.getElementById('darkness-overlay');
+
+        function openStory(messageData) {
+            isStoryActive = true;
+            clearTimeout(typeWriterTimer);
+            
+            actionEl.innerHTML = messageData.action;
+            actionEl.classList.remove('show');
+            quoteEl.innerHTML = '';
+            quoteEl.classList.add('typewriter-cursor');
+            storyOverlay.classList.add('active');
+
+            if(isAudioReady && droneSynth) droneSynth.volume.rampTo(-25, 2);
+
+            setTimeout(() => { actionEl.classList.add('show'); }, 1000);
+
+            setTimeout(() => {
+                let i = 0;
+                function typeWriter() {
+                    if (i < messageData.quote.length) {
+                        let char = messageData.quote.charAt(i);
+                        quoteEl.innerHTML += char;
+                        
+                        if (char.trim() !== '' && !['，', '。'].includes(char)) {
+                            if(navigator.vibrate) navigator.vibrate(5); 
+                            if(isAudioReady && typeNoise) typeNoise.triggerAttackRelease("32n");
+                        }
+                        
+                        i++;
+                        let delay = (['，', '。', '？', '！', '...'].includes(char)) ? 450 : Math.random() * 60 + 40;
+                        typeWriterTimer = setTimeout(typeWriter, delay);
+                    } else {
+                        quoteEl.classList.remove('typewriter-cursor');
+                        setTimeout(closeStory, 3500); 
+                    }
+                }
+                typeWriter();
+            }, 3000); 
+        }
+
+        function closeStory() {
+            storyOverlay.classList.remove('active');
+            
+            // 環境隱喻：360 環景圖逐漸變亮
+            let progress = currentStoryIndex / warMessages.length;
+            
+            // 讓疊加的黑暗濾鏡變淡
+            darknessOverlay.style.opacity = 1 - (progress * 0.8);
+            
+            // 讓 360 背景圖本身的材質變亮 (從 0x111111 慢慢過渡到 0x888888 左右)
+            let colorIntensity = Math.floor(17 + (progress * 100));
+            let colorHex = (colorIntensity << 16) | (colorIntensity << 8) | colorIntensity;
+            panoramaMaterial.color.setHex(colorHex);
+
+            if(isAudioReady) {
+                droneSynth.volume.rampTo(-18, 3);
+                droneSynth.frequency.rampTo(100 + progress * 100, 3);
+                hopePad.volume.rampTo(-20 + (progress * 10), 4);
+                bgFilter.frequency.rampTo(200 + (progress * 800), 2);
+            }
+
+            setTimeout(() => { 
+                isStoryActive = false; 
+                if (currentStoryIndex >= warMessages.length) {
+                    triggerEnding();
+                }
+            }, 1200);
+        }
+
+        function triggerEnding() {
+            isEnding = true;
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = particleData[i];
+                if(!p.isAwake) {
+                    p.isAwake = true;
+                    p.targetColor.setHex(Math.random() > 0.5 ? 0xffcc55 : 0xff8822);
+                    p.velocity.set(0, Math.random()*2 + 1, 0); 
+                    sizes[i] = p.baseSize * (Math.random() * 4 + 2);
+                }
+            }
+            geometry.attributes.size.needsUpdate = true;
+            
+            // 背景全面照亮
+            darknessOverlay.style.opacity = '0';
+            panoramaMaterial.color.setHex(0xffffff); // 恢復環景圖原本的明亮顏色
+
+            if(isAudioReady) {
+                droneSynth.volume.rampTo(-Infinity, 5); 
+                bgNoise.volume.rampTo(-Infinity, 5);
+                hopePad.volume.rampTo(-8, 3); 
+                hopePad.triggerAttack(["E3", "G3", "C4", "E4"], "+1"); 
+            }
+
+            if(navigator.vibrate) navigator.vibrate([80, 50, 150, 50, 200, 100, 300, 100, 400]);
+
+            setTimeout(() => {
+                document.getElementById('final-container').style.opacity = '1';
+            }, 5000);
+        }
+
+        // --- 動畫迴圈 ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 更新 360 攝影機視角 (滑動控制)
+            lat = Math.max(-85, Math.min(85, lat)); // 限制上下觀看角度，避免翻轉
+            const phi = THREE.MathUtils.degToRad(90 - lat);
+            const theta = THREE.MathUtils.degToRad(lon);
+            
+            camera.lookAt(
+                500 * Math.sin(phi) * Math.cos(theta),
+                500 * Math.cos(phi),
+                500 * Math.sin(phi) * Math.sin(theta)
+            );
+
+            const time = clock.getElapsedTime();
+            const posAttr = geometry.attributes.position;
+            const colAttr = geometry.attributes.color;
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = particleData[i];
+
+                positions[i * 3] += p.velocity.x;
+                positions[i * 3 + 1] += p.velocity.y;
+                positions[i * 3 + 2] += p.velocity.z;
+
+                // 360 空間的輪迴邊界
+                if (positions[i * 3 + 1] < -400 && !p.isAwake) {
+                    positions[i * 3 + 1] = 400; 
+                } else if (positions[i * 3 + 1] > 400 && p.isAwake) {
+                    positions[i * 3 + 1] = -400; 
+                }
+
+                if (p.isAwake) {
+                    if (isEnding) {
+                        const radius = Math.sqrt(positions[i*3]*positions[i*3] + positions[i*3+2]*positions[i*3+2]);
+                        const angle = Math.atan2(positions[i*3+2], positions[i*3]);
+                        const newAngle = angle + (0.015 * (200/Math.max(radius, 10))); 
+                        
+                        positions[i * 3] = Math.cos(newAngle) * radius;
+                        positions[i * 3 + 2] = Math.sin(newAngle) * radius;
+                        positions[i * 3 + 1] += Math.random() * 0.8; // 加速飛昇
+                    } else {
+                        positions[i * 3] += Math.sin(time * 1.5 + i) * 0.4; 
+                    }
+
+                    p.currentColor.lerp(p.targetColor, 0.03); 
+                    colAttr.setXYZ(i, p.currentColor.r, p.currentColor.g, p.currentColor.b);
+                }
+            }
+
+            posAttr.needsUpdate = true;
+            colAttr.needsUpdate = true;
+
+            // 讓整個粒子系統緩慢自轉，增加生命感
+            particles.rotation.y = time * 0.015;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>
