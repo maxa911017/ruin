@@ -29,38 +29,42 @@
         }
         @keyframes grainShift { 0% { background-position: 0 0; } 100% { background-position: 10px 10px; } }
 
+        /* 修改：半透明毛玻璃效果，讓 360 環景圖一開始就透出來 */
         #init-screen {
-            position: fixed; inset: 0; z-index: 1000; background: #000;
+            position: fixed; inset: 0; z-index: 1000; 
+            background: rgba(0, 0, 0, 0.65); 
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 2s ease-in-out; cursor: pointer;
         }
         .init-text {
-            color: rgba(255, 255, 255, 0.7); font-size: clamp(1rem, 4vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.9); font-size: clamp(1.2rem, 5vw, 1.5rem);
             letter-spacing: 0.5em; font-weight: 300; margin-left: 0.5em;
-            animation: pulse-slow 4s infinite; text-shadow: 0 0 10px rgba(255,255,255,0.2);
+            animation: pulse-slow 4s infinite; text-shadow: 0 0 15px rgba(255,255,255,0.4);
         }
         .init-subtext {
-            color: rgba(255, 255, 255, 0.3); font-size: 0.75rem; letter-spacing: 0.2em; margin-top: 4vh;
+            color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; letter-spacing: 0.2em; margin-top: 4vh;
         }
 
         #webgl-container { position: absolute; inset: 0; z-index: 1; }
 
+        /* 修改：降低覆蓋的黑暗感，一開始就能看清廢墟 */
         #darkness-overlay {
             position: absolute; inset: 0; pointer-events: none; z-index: 2;
-            background: rgba(0, 0, 0, 0.6); /* 用於疊加在 360 圖上的絕望感 */
-            transition: background-color 3s ease-in-out, opacity 4s ease-in-out;
+            background: rgba(0, 0, 0, 0.3); 
+            transition: opacity 3s ease-in-out;
         }
 
         #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 
         .instruction {
-            position: absolute; bottom: 12%; color: rgba(255, 255, 255, 0.6);
+            position: absolute; bottom: 12%; color: rgba(255, 255, 255, 0.7);
             font-size: 0.95rem; letter-spacing: 0.5em;
             animation: pulse-slow 4s infinite; text-align: center;
             transition: opacity 2s ease; text-shadow: 0 0 10px rgba(0,0,0,0.8);
         }
         .hidden-hint { opacity: 0; pointer-events: none; }
-        @keyframes pulse-slow { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+        @keyframes pulse-slow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
         #story-overlay {
             position: fixed; inset: 0; z-index: 100;
@@ -148,8 +152,7 @@
 
     <script>
         // ==========================================
-        // 【替換圖片】請在這裡將路徑替換為你的 360 環景圖檔名
-        // 建議圖片比例為 2:1，例如 4096x2048 解析度的 jpg
+        // 360 環景圖檔名設定
         // ==========================================
         const PANORAMA_IMAGE_URL = 'ruin.jpg';
         
@@ -221,11 +224,12 @@
         // 1. 載入 360 環景圖
         const textureLoader = new THREE.TextureLoader();
         const panoramaGeo = new THREE.SphereGeometry(800, 60, 40);
-        panoramaGeo.scale(-1, 1, 1); // 翻轉球體，讓我們可以看到內部
+        panoramaGeo.scale(-1, 1, 1); 
         
+        // 修改：讓材質初始亮度提高，使其在一開始就能清晰看見廢墟 (0x777777)
         const panoramaMaterial = new THREE.MeshBasicMaterial({
             map: textureLoader.load(PANORAMA_IMAGE_URL),
-            color: 0x111111 // 初始非常昏暗，保留廢墟氛圍
+            color: 0x777777 
         });
         const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMaterial);
         scene.add(panoramaMesh);
@@ -251,7 +255,6 @@
         }
 
         for (let i = 0; i < particleCount; i++) {
-            // 在 360 空間中散佈粒子
             positions[i * 3] = (Math.random() - 0.5) * 800;
             positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
             positions[i * 3 + 2] = (Math.random() - 0.5) * 800; 
@@ -287,7 +290,7 @@
         let isDragging = false;
         let dragDistance = 0;
         let pointerDownX = 0, pointerDownY = 0;
-        let lon = 0, lat = 0; // 經緯度視角
+        let lon = 0, lat = 0; 
         let savedLon = 0, savedLat = 0;
 
         container3D.addEventListener('pointerdown', (e) => {
@@ -302,7 +305,6 @@
 
         container3D.addEventListener('pointermove', (e) => {
             if (isDragging) {
-                // 計算滑動距離更新視角
                 lon = savedLon - (e.clientX - pointerDownX) * 0.15;
                 lat = savedLat + (e.clientY - pointerDownY) * 0.15;
                 dragDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
@@ -311,7 +313,6 @@
 
         container3D.addEventListener('pointerup', (e) => {
             isDragging = false;
-            // 如果拖拉距離很短，我們視為「點擊 (Tap)」來觸發螢火蟲
             if (dragDistance < 15 && !isStoryActive && !isEnding && document.getElementById('init-screen').style.display === 'none') {
                 handleTapInteraction(e.clientX, e.clientY);
             }
@@ -330,7 +331,7 @@
 
         // 點擊觸發邏輯
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Points.threshold = 50; // 放大判定範圍，適應 360 空間
+        raycaster.params.Points.threshold = 50; 
         let typeWriterTimer;
 
         function handleTapInteraction(clientX, clientY) {
@@ -353,7 +354,6 @@
                 }
             } 
             
-            // 防呆：如果沒點中精準的粒子，就近隨機挑一顆未喚醒的點亮
             if (hitIndex === -1) {
                 let fallbackIdx = Math.floor(Math.random() * particleCount);
                 while(particleData[fallbackIdx].isAwake) { fallbackIdx = Math.floor(Math.random() * particleCount); }
@@ -378,7 +378,7 @@
             const p = particleData[idx];
             p.isAwake = true;
             p.targetColor.setHex(0xffa23a); 
-            sizes[idx] = p.baseSize * 8; // 螢火蟲放大
+            sizes[idx] = p.baseSize * 8; 
             
             p.velocity.set((Math.random()-0.5)*0.3, Math.random()*0.5 + 0.3, (Math.random()-0.5)*0.3);
             geometry.attributes.size.needsUpdate = true;
@@ -443,14 +443,14 @@
         function closeStory() {
             storyOverlay.classList.remove('active');
             
-            // 環境隱喻：360 環景圖逐漸變亮
             let progress = currentStoryIndex / warMessages.length;
             
-            // 讓疊加的黑暗濾鏡變淡
-            darknessOverlay.style.opacity = 1 - (progress * 0.8);
+            // 黑暗濾鏡變淡 (1 -> 0)
+            darknessOverlay.style.opacity = 1 - progress;
             
-            // 讓 360 背景圖本身的材質變亮 (從 0x111111 慢慢過渡到 0x888888 左右)
-            let colorIntensity = Math.floor(17 + (progress * 100));
+            // 讓 360 背景圖逐漸變亮 (從 0x777777 過渡到 0xffffff)
+            // 0x77 是十進位的 119。 255 - 119 = 136 的變化空間
+            let colorIntensity = Math.floor(119 + (progress * 136));
             let colorHex = (colorIntensity << 16) | (colorIntensity << 8) | colorIntensity;
             panoramaMaterial.color.setHex(colorHex);
 
@@ -483,9 +483,8 @@
             }
             geometry.attributes.size.needsUpdate = true;
             
-            // 背景全面照亮
             darknessOverlay.style.opacity = '0';
-            panoramaMaterial.color.setHex(0xffffff); // 恢復環景圖原本的明亮顏色
+            panoramaMaterial.color.setHex(0xffffff); 
 
             if(isAudioReady) {
                 droneSynth.volume.rampTo(-Infinity, 5); 
@@ -507,8 +506,12 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // 更新 360 攝影機視角 (滑動控制)
-            lat = Math.max(-85, Math.min(85, lat)); // 限制上下觀看角度，避免翻轉
+            // 修改：加入緩慢自動旋轉機制，展示 360 空間的深度
+            if (!isDragging && !isStoryActive) {
+                lon += 0.05; // 即使不碰螢幕，場景也會自己非常緩慢地旋轉
+            }
+
+            lat = Math.max(-85, Math.min(85, lat)); 
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
             
@@ -529,7 +532,6 @@
                 positions[i * 3 + 1] += p.velocity.y;
                 positions[i * 3 + 2] += p.velocity.z;
 
-                // 360 空間的輪迴邊界
                 if (positions[i * 3 + 1] < -400 && !p.isAwake) {
                     positions[i * 3 + 1] = 400; 
                 } else if (positions[i * 3 + 1] > 400 && p.isAwake) {
@@ -544,7 +546,7 @@
                         
                         positions[i * 3] = Math.cos(newAngle) * radius;
                         positions[i * 3 + 2] = Math.sin(newAngle) * radius;
-                        positions[i * 3 + 1] += Math.random() * 0.8; // 加速飛昇
+                        positions[i * 3 + 1] += Math.random() * 0.8; 
                     } else {
                         positions[i * 3] += Math.sin(time * 1.5 + i) * 0.4; 
                     }
@@ -557,7 +559,6 @@
             posAttr.needsUpdate = true;
             colAttr.needsUpdate = true;
 
-            // 讓整個粒子系統緩慢自轉，增加生命感
             particles.rotation.y = time * 0.015;
 
             renderer.render(scene, camera);
