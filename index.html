@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>灰燼與微光 - 360環景沈浸版</title>
+    <title>螢火蟲的灰燼</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -13,7 +13,7 @@
         /* 鎖定原生 APP 行為，防止一切跑版與下拉更新 */
         body, html {
             margin: 0; padding: 0; 
-            width: 100vw; height: 100dvh; /* 使用 dvh 確保無視瀏覽器上下控制列 */
+            width: 100vw; height: 100dvh; 
             background-color: #000; overflow: hidden;
             font-family: 'Noto Serif TC', serif;
             user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
@@ -29,7 +29,6 @@
         }
         @keyframes grainShift { 0% { background-position: 0 0; } 100% { background-position: 10px 10px; } }
 
-        /* 修改：半透明毛玻璃效果，讓 360 環景圖一開始就透出來 */
         #init-screen {
             position: fixed; inset: 0; z-index: 1000; 
             background: rgba(0, 0, 0, 0.65); 
@@ -41,84 +40,96 @@
             color: rgba(255, 255, 255, 0.9); font-size: clamp(1.2rem, 5vw, 1.5rem);
             letter-spacing: 0.5em; font-weight: 300; margin-left: 0.5em;
             animation: pulse-slow 4s infinite; text-shadow: 0 0 15px rgba(255,255,255,0.4);
+            text-align: center; white-space: nowrap;
         }
         .init-subtext {
             color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; letter-spacing: 0.2em; margin-top: 4vh;
+            text-align: center;
         }
 
         #webgl-container { position: absolute; inset: 0; z-index: 1; }
 
-        /* 修改：降低覆蓋的黑暗感，一開始就能看清廢墟 */
         #darkness-overlay {
             position: absolute; inset: 0; pointer-events: none; z-index: 2;
-            background: rgba(0, 0, 0, 0.3); 
+            background: rgba(0, 0, 0, 0.35); 
             transition: opacity 3s ease-in-out;
         }
 
         #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 
         .instruction {
-            position: absolute; bottom: 12%; color: rgba(255, 255, 255, 0.7);
-            font-size: 0.95rem; letter-spacing: 0.5em;
+            position: absolute; bottom: 10%; color: rgba(255, 255, 255, 0.7);
+            font-size: clamp(0.8rem, 3vw, 0.95rem); letter-spacing: 0.4em;
             animation: pulse-slow 4s infinite; text-align: center;
             transition: opacity 2s ease; text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            width: 90vw; word-break: keep-all; /* 防止手機上字被切掉 */
         }
         .hidden-hint { opacity: 0; pointer-events: none; }
         @keyframes pulse-slow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
         #story-overlay {
             position: fixed; inset: 0; z-index: 100;
-            background-color: rgba(0, 0, 0, 0.85); 
+            background-color: rgba(0, 0, 0, 0.82); 
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         }
         #story-overlay.active { opacity: 1; pointer-events: auto; }
         
-        .story-text-container { width: 100vw; padding: 0 8vw; box-sizing: border-box; text-align: center; }
+        /* 嚴格控制文字容器，防止手機跑版 */
+        .story-text-container { 
+            width: 90vw; max-width: 600px; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
         
         #action-text {
-            color: #8a8a8a; font-size: clamp(0.9rem, 4vw, 1.15rem); letter-spacing: 0.25em; line-height: 2.2;
-            margin-bottom: 6vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
-            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 3vh;
-            font-weight: 300; filter: blur(5px);
+            color: #8a8a8a; font-size: clamp(0.85rem, 3.5vw, 1.1rem); letter-spacing: 0.2em; line-height: 2;
+            margin-bottom: 5vh; opacity: 0; transition: opacity 2s ease, filter 2s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 2.5vh;
+            font-weight: 300; filter: blur(5px); text-align: center;
+            width: 100%; word-break: keep-all; /* 確保中文不會被切斷 */
         }
         #action-text.show { opacity: 1; filter: blur(0px); }
         
         #quote-text {
-            color: #ffb86c; font-size: clamp(1.15rem, 5vw, 1.6rem); letter-spacing: 0.15em; line-height: 2.4;
-            text-shadow: 0 0 25px rgba(255, 184, 108, 0.25); min-height: 20vh;
+            color: #ffcc66; font-size: clamp(1.1rem, 4.5vw, 1.5rem); letter-spacing: 0.15em; line-height: 2.2;
+            text-shadow: 0 0 20px rgba(255, 204, 102, 0.3); min-height: 20vh;
             display: flex; align-items: center; justify-content: center; font-weight: 300;
+            text-align: left; width: 100%; word-break: keep-all; white-space: pre-wrap; /* 支援多行不斷字 */
         }
         .typewriter-cursor::after {
-            content: '|'; color: #ffb86c; animation: blink 1s step-end infinite; margin-left: 5px; opacity: 0.8;
+            content: '|'; color: #ffcc66; animation: blink 1s step-end infinite; margin-left: 5px; opacity: 0.8;
         }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+        /* 最終希望文字 */
         #final-container {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; opacity: 0; transition: opacity 6s ease-in; z-index: 15; pointer-events: none; width: 100%;
+            text-align: center; opacity: 0; transition: opacity 6s ease-in; z-index: 15; pointer-events: none; 
+            width: 90vw; max-width: 800px; /* 控制最大寬度避免爆框 */
         }
         #final-text {
-            font-size: clamp(1.8rem, 6vw, 3.5rem); font-weight: 300; letter-spacing: 0.4em;
+            font-size: clamp(1.6rem, 7vw, 3.5rem); font-weight: 300; letter-spacing: 0.3em;
             color: #fff; text-shadow: 0 0 40px rgba(255, 200, 100, 0.9), 0 0 80px rgba(255, 100, 50, 0.5);
-            white-space: nowrap; margin-bottom: 2vh; margin-left: 0.2em;
+            margin-bottom: 3vh; margin-left: 0.15em;
+            white-space: normal; line-height: 1.5; word-break: keep-all; /* 允許換行且不斷字 */
         }
         #final-subtext {
-            font-size: clamp(0.85rem, 3vw, 1.2rem); color: rgba(255, 200, 150, 0.8);
-            letter-spacing: 0.5em; font-weight: 200; margin-left: 0.25em; text-shadow: 0 0 10px #000;
+            font-size: clamp(0.8rem, 3.5vw, 1.2rem); color: rgba(255, 220, 150, 0.9);
+            letter-spacing: 0.3em; font-weight: 200; margin-left: 0.15em; text-shadow: 0 0 10px #000;
+            white-space: normal; line-height: 1.8; word-break: keep-all;
         }
 
         .ripple {
-            position: absolute; border: 1px solid rgba(255, 200, 100, 0.9);
+            position: absolute; border: 1px solid rgba(255, 220, 100, 0.9);
             border-radius: 50%; transform: translate(-50%, -50%) scale(0);
             pointer-events: none; z-index: 5;
             animation: ripple-anim 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
         }
         @keyframes ripple-anim {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 30px rgba(255, 150, 50, 0.9) inset; }
-            50% { opacity: 0.4; border-width: 2px; }
-            100% { transform: translate(-50%, -50%) scale(5); opacity: 0; box-shadow: 0 0 0px rgba(255, 150, 50, 0) inset; border-width: 0px; }
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 40px rgba(255, 180, 50, 0.9) inset; border-width: 3px; }
+            50% { opacity: 0.5; border-width: 1px; }
+            100% { transform: translate(-50%, -50%) scale(6); opacity: 0; box-shadow: 0 0 0px rgba(255, 150, 50, 0) inset; border-width: 0px; }
         }
     </style>
 </head>
@@ -139,7 +150,7 @@
         
         <div id="final-container">
             <div id="final-text">一切都會變得更好</div>
-            <div id="final-subtext">那些未曾送達的愛，終將化作照亮黑夜的星火</div>
+            <div id="final-subtext">那些未曾送達的愛，終將化作漫天星火照亮黑夜</div>
         </div>
     </div>
 
@@ -185,7 +196,7 @@
                     frequency: 250, envelope: { attack: 0.01, decay: 1.5, release: 1 },
                     harmonicity: 4, modulationIndex: 20, resonance: 4000, octaves: 1.5
                 }).connect(reverb);
-                chimeSynth.volume.value = -18;
+                chimeSynth.volume.value = -15;
 
                 typeNoise = new Tone.NoiseSynth({
                     noise: { type: 'brown' }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.05 }
@@ -208,7 +219,7 @@
             { action: "灰燼掩埋著一個失去溫度的鐵盒，<br>裡頭正反覆重播著最後的牽掛。", quote: "「地下室的空氣越來越稀薄了。小寶，爸爸永遠愛你，你要勇敢。」" },
             { action: "你拾起一張被戰火燒毀一半的紙條，<br>上面的字跡早已因淚水而暈染開來。", quote: "「外面終於安靜下來了，但我不敢出去。好冷。」" },
             { action: "在沒有訊號的荒原裡，<br>一個紅色驚嘆號將最後的愛意，永遠困在了發件匣。", quote: "「他們說救援不會來了。我們把最後的水留給了孩子。」" },
-            { action: "在最深最深的黑夜中，<br>一卷底片記錄下了他們對黎明，最後的渴望。", quote: "「天亮了。這可能是我最後一次看到日出...」" }
+            { action: "在最深最深的黑夜中，<br>一卷底片記錄下了他們對黎明最後的渴望。", quote: "「天亮了。這可能是我最後一次看到日出...」" }
         ];
 
         // --- Three.js 系統與 360 環景 ---
@@ -221,56 +232,70 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container3D.appendChild(renderer.domElement);
 
-        // 1. 載入 360 環景圖
         const textureLoader = new THREE.TextureLoader();
         const panoramaGeo = new THREE.SphereGeometry(800, 60, 40);
         panoramaGeo.scale(-1, 1, 1); 
         
-        // 修改：讓材質初始亮度提高，使其在一開始就能清晰看見廢墟 (0x777777)
         const panoramaMaterial = new THREE.MeshBasicMaterial({
             map: textureLoader.load(PANORAMA_IMAGE_URL),
-            color: 0x777777 
+            color: 0x666666 
         });
         const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMaterial);
         scene.add(panoramaMesh);
 
-        // 2. 建立粒子系統
-        const particleCount = 2000; 
+        // 2. 建立爆炸數量的粒子系統 (螢火蟲之墓氛圍)
+        const particleCount = 6000; // 從 2000 提升至 6000
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
         const sizes = new Float32Array(particleCount);
         const particleData = [];
 
+        // 繪製更柔和的螢火蟲光暈貼圖
         function createGlowTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(0.2, 'rgba(255,200,100,0.8)');
-            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.1, 'rgba(255, 220, 150, 0.9)');
+            grad.addColorStop(0.4, 'rgba(255, 150, 50, 0.4)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(canvas);
         }
+
+        const fireflyColors = [0xffb84d, 0xffcc66, 0xff9933, 0xccff66]; // 金黃、亮黃、橘黃、微綠
 
         for (let i = 0; i < particleCount; i++) {
             positions[i * 3] = (Math.random() - 0.5) * 800;
             positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
             positions[i * 3 + 2] = (Math.random() - 0.5) * 800; 
 
-            colors[i * 3] = 0.15 + Math.random() * 0.05;
-            colors[i * 3 + 1] = 0.15 + Math.random() * 0.05;
-            colors[i * 3 + 2] = 0.2 + Math.random() * 0.1;
-
-            sizes[i] = Math.random() * 2 + 1;
+            // 設定 15% 的粒子一開始就是螢火蟲 (營造生命力氛圍)
+            let isPreLit = Math.random() < 0.15;
+            
+            if (isPreLit) {
+                let randomColor = fireflyColors[Math.floor(Math.random() * fireflyColors.length)];
+                let c = new THREE.Color(randomColor);
+                colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+                sizes[i] = Math.random() * 6 + 3; // 較大且亮
+            } else {
+                colors[i * 3] = 0.15 + Math.random() * 0.05;
+                colors[i * 3 + 1] = 0.15 + Math.random() * 0.05;
+                colors[i * 3 + 2] = 0.2 + Math.random() * 0.1;
+                sizes[i] = Math.random() * 2 + 1; // 黯淡的灰燼
+            }
 
             particleData.push({
-                velocity: new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.4 - 0.1, (Math.random()-0.5)*0.1),
-                isAwake: false,
-                targetColor: new THREE.Color(),
+                velocity: isPreLit 
+                    ? new THREE.Vector3((Math.random()-0.5)*0.5, Math.random()*0.5 + 0.2, (Math.random()-0.5)*0.5) 
+                    : new THREE.Vector3((Math.random()-0.5)*0.1, -Math.random()*0.4 - 0.1, (Math.random()-0.5)*0.1),
+                isAwake: isPreLit,
+                targetColor: new THREE.Color(isPreLit ? fireflyColors[Math.floor(Math.random() * fireflyColors.length)] : 0x000000),
                 currentColor: new THREE.Color(colors[i*3], colors[i*3+1], colors[i*3+2]),
-                baseSize: sizes[i]
+                baseSize: isPreLit ? sizes[i] : (sizes[i] * 4), // 預留喚醒後的大小
+                phase: Math.random() * Math.PI * 2 // 用於閃爍特效
             });
         }
 
@@ -280,7 +305,7 @@
 
         const material = new THREE.PointsMaterial({
             size: 2.5, map: createGlowTexture(), vertexColors: true,
-            transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
+            transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false
         });
 
         const particles = new THREE.Points(geometry, material);
@@ -318,7 +343,6 @@
             }
         });
 
-        // 啟動畫面邏輯
         document.getElementById('init-screen').addEventListener('click', async () => {
             await initAudio();
             const initScreen = document.getElementById('init-screen');
@@ -329,9 +353,9 @@
             }, 2000);
         });
 
-        // 點擊觸發邏輯
+        // 點擊觸發邏輯：引爆群集螢火蟲！
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Points.threshold = 50; 
+        raycaster.params.Points.threshold = 60; 
         let typeWriterTimer;
 
         function handleTapInteraction(clientX, clientY) {
@@ -344,23 +368,45 @@
             raycaster.setFromCamera(mouse3D, camera);
             const intersects = raycaster.intersectObject(particles);
 
-            let hitIndex = -1;
+            let hitPoint = new THREE.Vector3();
             if (intersects.length > 0) {
-                for(let i=0; i<intersects.length; i++) {
-                    if (!particleData[intersects[i].index].isAwake) {
-                        hitIndex = intersects[i].index;
-                        break;
-                    }
-                }
-            } 
-            
-            if (hitIndex === -1) {
-                let fallbackIdx = Math.floor(Math.random() * particleCount);
-                while(particleData[fallbackIdx].isAwake) { fallbackIdx = Math.floor(Math.random() * particleCount); }
-                hitIndex = fallbackIdx;
+                hitPoint.copy(intersects[0].point);
+            } else {
+                // 如果沒點中實體，就在鏡頭前方抓一個點作為爆發中心
+                camera.getWorldDirection(hitPoint);
+                hitPoint.multiplyScalar(150 + Math.random()*100).add(camera.position);
             }
 
-            awakenParticle(hitIndex, clientX, clientY);
+            // 引爆螢火蟲群！尋找該座標附近 120 顆未喚醒的灰燼並賦予爆炸動能
+            let awakenCount = 0;
+            let burstAmount = 120 + Math.random() * 50; 
+            
+            for(let i=0; i<particleCount; i++) {
+                if(!particleData[i].isAwake) {
+                    let px = positions[i*3], py = positions[i*3+1], pz = positions[i*3+2];
+                    let distSq = (px-hitPoint.x)**2 + (py-hitPoint.y)**2 + (pz-hitPoint.z)**2;
+                    
+                    if(distSq < 60000 || awakenCount < 20) { // 距離內，或保證至少喚醒一些
+                        awakenParticle(i);
+                        awakenCount++;
+                        if(awakenCount >= burstAmount) break;
+                    }
+                }
+            }
+
+            createRipple(clientX, clientY);
+
+            // 聽覺反饋與震動 (只觸發一次，避免破音)
+            if (isAudioReady && chimeSynth) {
+                let note = chimeNotes[currentStoryIndex % chimeNotes.length];
+                chimeSynth.triggerAttackRelease(note, "2n"); // 延長回音
+            }
+            if(navigator.vibrate) navigator.vibrate([60, 40, 80, 30, 40]); // 強烈的煙火震動感
+
+            if (currentStoryIndex < warMessages.length) {
+                openStory(warMessages[currentStoryIndex]);
+                currentStoryIndex++;
+            }
         }
 
         function createRipple(x, y) {
@@ -374,27 +420,19 @@
 
         const chimeNotes = ["C5", "E5", "G5", "B5", "D6"];
 
-        function awakenParticle(idx, x, y) {
+        function awakenParticle(idx) {
             const p = particleData[idx];
             p.isAwake = true;
-            p.targetColor.setHex(0xffa23a); 
-            sizes[idx] = p.baseSize * 8; 
+            p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]); 
+            sizes[idx] = p.baseSize * (Math.random() * 1.5 + 1); 
             
-            p.velocity.set((Math.random()-0.5)*0.3, Math.random()*0.5 + 0.3, (Math.random()-0.5)*0.3);
+            // 賦予爆炸般的散射動能！
+            p.velocity.set(
+                (Math.random()-0.5) * 3, 
+                Math.random() * 2.5 + 0.5, 
+                (Math.random()-0.5) * 3
+            );
             geometry.attributes.size.needsUpdate = true;
-
-            createRipple(x, y);
-
-            if (isAudioReady && chimeSynth) {
-                let note = chimeNotes[currentStoryIndex % chimeNotes.length];
-                chimeSynth.triggerAttackRelease(note, "4n");
-            }
-            if(navigator.vibrate) navigator.vibrate([40, 60, 30]); 
-
-            if (currentStoryIndex < warMessages.length) {
-                openStory(warMessages[currentStoryIndex]);
-                currentStoryIndex++;
-            }
         }
 
         const storyOverlay = document.getElementById('story-overlay');
@@ -445,12 +483,9 @@
             
             let progress = currentStoryIndex / warMessages.length;
             
-            // 黑暗濾鏡變淡 (1 -> 0)
             darknessOverlay.style.opacity = 1 - progress;
             
-            // 讓 360 背景圖逐漸變亮 (從 0x777777 過渡到 0xffffff)
-            // 0x77 是十進位的 119。 255 - 119 = 136 的變化空間
-            let colorIntensity = Math.floor(119 + (progress * 136));
+            let colorIntensity = Math.floor(102 + (progress * 153)); // 從 0x666666 過渡到 0xffffff
             let colorHex = (colorIntensity << 16) | (colorIntensity << 8) | colorIntensity;
             panoramaMaterial.color.setHex(colorHex);
 
@@ -472,13 +507,14 @@
         function triggerEnding() {
             isEnding = true;
 
+            // 喚醒所有剩下的灰燼！全體升空
             for (let i = 0; i < particleCount; i++) {
                 const p = particleData[i];
                 if(!p.isAwake) {
                     p.isAwake = true;
-                    p.targetColor.setHex(Math.random() > 0.5 ? 0xffcc55 : 0xff8822);
-                    p.velocity.set(0, Math.random()*2 + 1, 0); 
-                    sizes[i] = p.baseSize * (Math.random() * 4 + 2);
+                    p.targetColor.setHex(fireflyColors[Math.floor(Math.random() * fireflyColors.length)]);
+                    p.velocity.set((Math.random()-0.5)*1.5, Math.random()*3 + 1.5, (Math.random()-0.5)*1.5); 
+                    sizes[i] = p.baseSize * (Math.random() * 1.5 + 1);
                 }
             }
             geometry.attributes.size.needsUpdate = true;
@@ -490,10 +526,10 @@
                 droneSynth.volume.rampTo(-Infinity, 5); 
                 bgNoise.volume.rampTo(-Infinity, 5);
                 hopePad.volume.rampTo(-8, 3); 
-                hopePad.triggerAttack(["E3", "G3", "C4", "E4"], "+1"); 
+                hopePad.triggerAttack(["C4", "E4", "G4", "B4"], "+1"); // 溫暖的大和弦
             }
 
-            if(navigator.vibrate) navigator.vibrate([80, 50, 150, 50, 200, 100, 300, 100, 400]);
+            if(navigator.vibrate) navigator.vibrate([80, 50, 150, 50, 200, 100, 300, 100, 500, 200, 800]);
 
             setTimeout(() => {
                 document.getElementById('final-container').style.opacity = '1';
@@ -506,9 +542,8 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // 修改：加入緩慢自動旋轉機制，展示 360 空間的深度
             if (!isDragging && !isStoryActive) {
-                lon += 0.05; // 即使不碰螢幕，場景也會自己非常緩慢地旋轉
+                lon += 0.04; 
             }
 
             lat = Math.max(-85, Math.min(85, lat)); 
@@ -540,19 +575,28 @@
 
                 if (p.isAwake) {
                     if (isEnding) {
+                        // 結局的螺旋上升
                         const radius = Math.sqrt(positions[i*3]*positions[i*3] + positions[i*3+2]*positions[i*3+2]);
                         const angle = Math.atan2(positions[i*3+2], positions[i*3]);
                         const newAngle = angle + (0.015 * (200/Math.max(radius, 10))); 
-                        
                         positions[i * 3] = Math.cos(newAngle) * radius;
                         positions[i * 3 + 2] = Math.sin(newAngle) * radius;
                         positions[i * 3 + 1] += Math.random() * 0.8; 
                     } else {
+                        // 螢火蟲的日常微風飛舞，加入爆炸後的減速機制 (空氣阻力)
+                        p.velocity.x *= 0.96;
+                        p.velocity.z *= 0.96;
+                        // 確保 Y 軸保持緩慢上升
+                        if (p.velocity.y > 0.5) p.velocity.y *= 0.98; 
+                        
                         positions[i * 3] += Math.sin(time * 1.5 + i) * 0.4; 
                     }
 
-                    p.currentColor.lerp(p.targetColor, 0.03); 
-                    colAttr.setXYZ(i, p.currentColor.r, p.currentColor.g, p.currentColor.b);
+                    p.currentColor.lerp(p.targetColor, 0.05); 
+                    
+                    // 螢火蟲呼吸閃爍特效 (Flicker)
+                    let flicker = 0.7 + Math.sin(time * 8 + p.phase) * 0.3; // 明暗變化從 0.4 到 1.0
+                    colAttr.setXYZ(i, p.currentColor.r * flicker, p.currentColor.g * flicker, p.currentColor.b * flicker);
                 }
             }
 
